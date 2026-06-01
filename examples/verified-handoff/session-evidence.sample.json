@@ -1,0 +1,36 @@
+{
+ "schema": "stealth.session.evidence.v0",
+ "task": {
+  "id": "task_demo_001",
+  "title": "Update a README sentence",
+  "scope": {
+   "allowed_files": ["README.md"],
+   "allowed_commands": ["git diff -- README.md", "bun --version"],
+   "network_allowed": false
+  }
+ },
+ "agent": {
+  "id": "stealth-demo-agent",
+  "runtime": "Stealth"
+ },
+ "changes": {
+  "files_changed": ["README.md"],
+  "diff_sha256": "demo-diff-hash"
+ },
+ "commands": [
+  {
+   "command": "git diff -- README.md",
+   "exit_code": 0
+  },
+  {
+   "command": "bun --version",
+   "exit_code": 0
+  }
+ ],
+ "artifacts": [
+  {
+   "name": "patch-summary",
+   "sha256": "demo-artifact-hash"
+  }
+ ]
+}
