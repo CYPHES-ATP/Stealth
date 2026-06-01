@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://opencode.ai/desktop-theme.json",
-  "title": "Stealth Desktop Theme",
+  "title": "Stealth Theme",
   "description": "A theme definition for the Stealth desktop application",
   "type": "object",
   "required": ["name", "id", "light", "dark"],

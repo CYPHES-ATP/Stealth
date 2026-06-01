@@ -1,4 +1,4 @@
-# Stealth Desktop
+# Stealth
 
 The CYPHES Stealth desktop app, built with Electron and packaged as a macOS DMG.
 

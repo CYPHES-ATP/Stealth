@@ -620,7 +620,7 @@ export const dict = {
   "sidebar.project.viewAllSessions": "Tüm oturumları görüntüle",
   "sidebar.project.clearNotifications": "Bildirimleri temizle",
 
-  "app.name.desktop": "Stealth Masaüstü",
+  "app.name.desktop": "Stealth",
 
   "settings.section.desktop": "Masaüstü",
   "settings.section.server": "Sunucu",

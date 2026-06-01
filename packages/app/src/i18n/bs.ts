@@ -614,7 +614,7 @@ export const dict = {
   "sidebar.project.viewAllSessions": "Prikaži sve sesije",
   "sidebar.project.clearNotifications": "Očisti obavijesti",
 
-  "app.name.desktop": "Stealth Desktop",
+  "app.name.desktop": "Stealth",
 
   "settings.section.desktop": "Desktop",
   "settings.section.server": "Server",

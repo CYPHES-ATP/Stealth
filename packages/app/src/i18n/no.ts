@@ -617,7 +617,7 @@ export const dict = {
   "sidebar.project.viewAllSessions": "Vis alle sesjoner",
   "sidebar.project.clearNotifications": "Fjern varsler",
 
-  "app.name.desktop": "Stealth Desktop",
+  "app.name.desktop": "Stealth",
 
   "settings.section.desktop": "Skrivebord",
   "settings.section.server": "Server",

@@ -1,13 +1,13 @@
 # Stealth
 
-Stealth is the CYPHES-native macOS desktop build of the opencode GUI, rebranded for a high-contrast black, cyan, and signal-green interface. This repository tracks the v1.15.13 desktop GUI baseline and keeps the underlying agent/runtime behavior intact while replacing the user-facing product name, app metadata, icons, installer artifact names, menus, splash assets, and visual theme.
+Stealth v1.0 is the CYPHES-native macOS desktop build of the opencode GUI. It keeps the underlying agent/runtime behavior intact while replacing the visible product identity, installer metadata, icons, menus, and theme with a high-contrast black and cyan CYPHES experience.
 
 ## Download
 
 The Apple Silicon test build is produced as:
 
 ```text
-packages/desktop/dist/stealth-desktop-mac-arm64.dmg
+packages/desktop/dist/Stealth-v1.0-mac-arm64.dmg
 ```
 
 For local testing, open the DMG, drag `Stealth.app` into Applications, then launch it from Applications.
@@ -21,12 +21,12 @@ open /Applications/Stealth.app
 
 ## What Changed
 
-- Product name changed from OpenCode to Stealth across visible desktop UI, windows, menus, metadata, update labels, and installer output.
-- macOS bundle identity changed to `network.cyphes.stealth`.
-- Artifact output changed to `stealth-desktop-${os}-${arch}.${ext}`.
-- Native icons, Dock icon, favicons, and social preview assets were rebuilt around the CYPHES black/cyan/green mark.
-- Renderer theme now defaults to a dark CYPHES visual system using the branding tokens from `~/Desktop/CYPHES/index.html`.
-- Auto-update is disabled for now so Stealth does not check upstream OpenCode release feeds.
+- Product label is `Stealth v1.0` in the desktop settings footer and app metadata.
+- macOS bundle identity is `network.cyphes.stealth`.
+- Artifact output is `Stealth-v1.0-${os}-${arch}.${ext}`.
+- Native app icons, Dock icons, and renderer favicons are generated from `packages/desktop/icons/source/cyphes.png`.
+- Theme startup is locked to AMOLED and dark mode; the General settings Appearance section is hidden.
+- Auto-update is disabled for now so Stealth does not check upstream release feeds.
 
 The internal package names, workspace imports, server environment variables, and lower-level runtime plumbing intentionally remain opencode-compatible to avoid changing app behavior during this rebrand pass.
 
@@ -68,10 +68,13 @@ Common files for Stealth branding work:
 - `packages/desktop/electron-builder.config.ts` controls product name, app ID, protocols, and artifact names.
 - `packages/desktop/src/main/index.ts` controls Electron app names, user data path, protocol registration, and startup.
 - `packages/desktop/src/main/windows.ts` controls native window title, background, icon, and load-failure dialogs.
+- `packages/desktop/icons/source/cyphes.png` is the source for generated native icons.
+- `packages/desktop/icons/{dev,beta,prod}` contains native app icon assets.
+- `packages/app/public/oc-theme-preload.js` forces AMOLED/dark before the app mounts.
+- `packages/ui/src/theme/context.tsx` keeps the runtime theme locked to AMOLED/dark.
+- `packages/app/src/components/settings-general.tsx` hides the Appearance section.
 - `packages/app/src/index.css` contains the CYPHES visual theme override.
 - `packages/ui/src/components/logo.tsx` contains the Stealth mark, splash, and wordmark.
-- `packages/desktop/icons/{dev,beta,prod}` contains native app icon assets.
-- `packages/app/public` contains renderer favicon and social preview assets.
 
 Use this build command before opening a PR:
 
@@ -89,10 +92,6 @@ OPENCODE_CHANNEL=prod CSC_IDENTITY_AUTO_DISCOVERY=false bun --cwd packages/deskt
 
 Stealth keeps the same provider configuration behavior as opencode. You can still connect Anthropic, OpenAI, Google, OpenRouter, local providers, and any OpenAI-compatible endpoint supported by the upstream runtime.
 
-## Themes
-
-Stealth ships with a CYPHES-first dark theme. Existing theme files remain in the source tree for compatibility, but the app-level CSS override keeps the default desktop experience black/cyan/green.
-
 ## Attribution
 
-Stealth is based on the MIT-licensed opencode v1.15.13 desktop GUI by Anomaly Innovations, Inc. The CYPHES rebrand is maintained at [CYPHES-ATP/Stealth](https://github.com/CYPHES-ATP/Stealth).
+Stealth is based on the MIT-licensed opencode desktop GUI by Anomaly Innovations, Inc. The CYPHES rebrand is maintained at [CYPHES-ATP/Stealth](https://github.com/CYPHES-ATP/Stealth).

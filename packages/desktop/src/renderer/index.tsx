@@ -57,6 +57,8 @@ void initI18n()
 
 const deepLinkEvent = "opencode:deep-link"
 
+const displayVersion = (version: string) => version.replace(/\.0$/, "")
+
 const emitDeepLinks = (urls: string[]) => {
   if (urls.length === 0) return
   window.__OPENCODE__ ??= {}
@@ -146,7 +148,7 @@ const createPlatform = (): Platform => {
   return {
     platform: "desktop",
     os,
-    version: pkg.version,
+    version: displayVersion(pkg.version),
 
     async openDirectoryPickerDialog(opts) {
       const defaultPath = await wslHome()

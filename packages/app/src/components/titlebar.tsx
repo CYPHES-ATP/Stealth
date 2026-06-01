@@ -176,13 +176,10 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
   createEffect(() => {
     if (platform.platform !== "desktop") return
 
-    const scheme = theme.colorScheme()
-    const value = scheme === "system" ? null : scheme
-
     const win = currentThemeWindow()
     if (!win?.setTheme) return
 
-    void win.setTheme(value).catch(() => undefined)
+    void win.setTheme(theme.mode()).catch(() => undefined)
   })
 
   const interactive = (target: EventTarget | null) => {

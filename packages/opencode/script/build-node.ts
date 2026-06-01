@@ -12,6 +12,7 @@ const dir = path.resolve(__dirname, "..")
 process.chdir(dir)
 
 const generated = await import("./generate.ts")
+const version = process.env.STEALTH_VERSION ?? "1.0.0"
 
 // Load migrations from migration directories
 const migrationDirs = (
@@ -54,6 +55,7 @@ await Bun.build({
     OPENCODE_MIGRATIONS: JSON.stringify(migrations),
     OPENCODE_MODELS_DEV: generated.modelsData,
     OPENCODE_CHANNEL: `'${Script.channel}'`,
+    OPENCODE_VERSION: `'${version}'`,
   },
   files: {
     "opencode-web-ui.gen.ts": "",

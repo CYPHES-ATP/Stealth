@@ -119,9 +119,11 @@ const clearAuthToken = () => {
   history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash)
 }
 
+const displayVersion = (version: string) => version.replace(/\.0$/, "")
+
 const platform: Platform = {
   platform: "web",
-  version: pkg.version,
+  version: displayVersion(pkg.version),
   openLink,
   back,
   forward,

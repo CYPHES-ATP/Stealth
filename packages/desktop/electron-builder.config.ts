@@ -27,7 +27,7 @@ const channel = (() => {
 })()
 
 const getBase = (): Configuration => ({
-  artifactName: "stealth-desktop-${os}-${arch}.${ext}",
+  artifactName: "Stealth-v1.0-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
     buildResources: "resources",

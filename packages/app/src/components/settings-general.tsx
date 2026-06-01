@@ -804,7 +804,9 @@ export const SettingsGeneral: Component = () => {
       <div class="flex flex-col gap-8 w-full">
         <GeneralSection />
 
-        <AppearanceSection />
+        <Show when={false}>
+          <AppearanceSection />
+        </Show>
 
         <NotificationsSection />
 

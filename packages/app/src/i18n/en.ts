@@ -727,7 +727,7 @@ export const dict = {
   "debugBar.mem.tipUnavailable": "Used JS heap vs heap limit. Chromium only.",
   "debugBar.mem.tip": "Used JS heap vs heap limit. {{used}} of {{limit}}.",
 
-  "app.name.desktop": "Stealth Desktop",
+  "app.name.desktop": "Stealth",
 
   "settings.section.desktop": "Desktop",
   "settings.section.server": "Server",
