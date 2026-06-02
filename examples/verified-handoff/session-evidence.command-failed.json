@@ -1,0 +1,43 @@
+{
+  "schema": "stealth.session.evidence.v0",
+  "task": {
+    "id": "task_demo_command_failed",
+    "title": "Run a command that fails",
+    "scope": {
+      "allowed_files": [
+        "README.md"
+      ],
+      "allowed_commands": [
+        "git diff -- README.md",
+        "bun run test:demo"
+      ],
+      "network_allowed": false
+    }
+  },
+  "agent": {
+    "id": "stealth-demo-agent",
+    "runtime": "Stealth"
+  },
+  "changes": {
+    "files_changed": [
+      "README.md"
+    ],
+    "diff_sha256": "demo-diff-hash-command-failed"
+  },
+  "commands": [
+    {
+      "command": "git diff -- README.md",
+      "exit_code": 0
+    },
+    {
+      "command": "bun run test:demo",
+      "exit_code": 1
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "patch-summary",
+      "sha256": "demo-artifact-hash"
+    }
+  ]
+}

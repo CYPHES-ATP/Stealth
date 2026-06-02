@@ -111,12 +111,30 @@ function verifyEvidence(evidence: Evidence): {
   }
 }
 
-const evidencePath = process.argv[2] ?? "examples/verified-handoff/session-evidence.sample.json"
-const evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as Evidence
-const result = verifyEvidence(evidence)
+const args = process.argv.slice(2);
+const evidencePath =
+  args.find((arg) => !arg.startsWith("--")) ??
+  "examples/verified-handoff/session-evidence.sample.json";
 
-console.log(JSON.stringify(result, null, 2))
+const expectArg = args.find((arg) => arg.startsWith("--expect="));
+const expectedReasonCode = expectArg?.slice("--expect=".length);
+
+const evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as Evidence;
+const result = verifyEvidence(evidence);
+
+console.log(JSON.stringify(result, null, 2));
+
+if (expectedReasonCode) {
+  if (result.reason_code !== expectedReasonCode) {
+    console.error(
+      `Expected reason_code ${expectedReasonCode}, got ${result.reason_code}`
+    );
+    process.exit(1);
+  }
+
+  process.exit(0);
+}
 
 if (result.status !== "OK") {
-  process.exit(1)
+  process.exit(1);
 }
