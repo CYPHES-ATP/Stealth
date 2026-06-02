@@ -1,0 +1,37 @@
+{
+  "schema": "stealth.session.evidence.v0",
+  "task": {
+    "id": "task_demo_invalid_evidence",
+    "title": "Missing diff commitment",
+    "scope": {
+      "allowed_files": [
+        "README.md"
+      ],
+      "allowed_commands": [
+        "git diff -- README.md"
+      ],
+      "network_allowed": false
+    }
+  },
+  "agent": {
+    "id": "stealth-demo-agent",
+    "runtime": "Stealth"
+  },
+  "changes": {
+    "files_changed": [
+      "README.md"
+    ]
+  },
+  "commands": [
+    {
+      "command": "git diff -- README.md",
+      "exit_code": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "patch-summary",
+      "sha256": "demo-artifact-hash"
+    }
+  ]
+}
