@@ -1,6 +1,6 @@
 # Stealth
 
-Stealth v1.0 is the CYPHES-native macOS desktop build of the opencode GUI. It keeps the underlying agent/runtime behavior intact while replacing the visible product identity, installer metadata, icons, menus, and theme with a high-contrast black and cyan CYPHES experience.
+Stealth v1.0 is the CYPHES-native desktop build of the opencode GUI. It keeps the underlying agent/runtime behavior intact while replacing the visible product identity, installer metadata, icons, menus, and theme with a high-contrast black and cyan CYPHES experience.
 
 ## Download
 
@@ -8,6 +8,12 @@ The Apple Silicon test build is produced as:
 
 ```text
 packages/desktop/dist/Stealth-v1.0-mac-arm64.dmg
+```
+
+The Windows x64 test build is produced as:
+
+```text
+packages/desktop/dist/Stealth-v1.0-win-x64.exe
 ```
 
 For local testing, open the DMG, drag `Stealth.app` into Applications, then launch it from Applications.
@@ -34,7 +40,7 @@ The internal package names, workspace imports, server environment variables, and
 
 Requirements:
 
-- macOS on Apple Silicon
+- macOS on Apple Silicon for the local DMG, or Windows x64 for a native Windows build
 - Xcode Command Line Tools
 - Bun `1.3.14`
 - Node.js `22+`
@@ -59,6 +65,23 @@ OPENCODE_CHANNEL=prod CSC_IDENTITY_AUTO_DISCOVERY=false bun --cwd packages/deskt
 
 The DMG will be written to `packages/desktop/dist/`.
 
+Build the Windows x64 installer from Windows:
+
+```bash
+OPENCODE_CHANNEL=prod bun --cwd packages/desktop build
+OPENCODE_CHANNEL=prod bun --cwd packages/desktop package:win -- --x64 --publish never
+```
+
+Build the Windows x64 installer from macOS:
+
+```bash
+bun install --os=win32 --cpu=x64 --no-save --frozen-lockfile
+OPENCODE_CHANNEL=prod ELECTRON_TARGET_PLATFORM=win32 ELECTRON_TARGET_ARCH=x64 bun --cwd packages/desktop build
+OPENCODE_CHANNEL=prod bun --cwd packages/desktop package:win -- --x64 --publish never
+```
+
+The desktop build output is `packages/desktop/out/main/index.js`; do not expect a root-level `out/main/index.js`.
+
 ## Developer Guide
 
 The desktop app lives in `packages/desktop`. The main renderer UI comes from `packages/app`, with shared design components in `packages/ui`.
@@ -80,6 +103,12 @@ Use this build command before opening a PR:
 
 ```bash
 OPENCODE_CHANNEL=prod bun --cwd packages/desktop build
+```
+
+For a cross-built Windows package from macOS, use a target-specific desktop build first:
+
+```bash
+OPENCODE_CHANNEL=prod ELECTRON_TARGET_PLATFORM=win32 ELECTRON_TARGET_ARCH=x64 bun --cwd packages/desktop build
 ```
 
 Use this packaging command before cutting a local macOS test DMG:

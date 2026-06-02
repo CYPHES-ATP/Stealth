@@ -12,7 +12,9 @@ const channel = (() => {
   return "dev"
 })()
 
-const nodePtyPkg = `@lydell/node-pty-${process.platform}-${process.arch}`
+const targetPlatform = process.env.ELECTRON_TARGET_PLATFORM ?? process.env.npm_config_platform ?? process.platform
+const targetArch = process.env.ELECTRON_TARGET_ARCH ?? process.env.npm_config_arch ?? process.arch
+const nodePtyPkg = `@lydell/node-pty-${targetPlatform}-${targetArch}`
 
 const sentry =
   process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
