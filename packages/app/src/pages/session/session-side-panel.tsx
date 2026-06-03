@@ -22,6 +22,7 @@ import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
+import { useServerSDK } from "@/context/server-sdk"
 import { createFileTabListSync } from "@/pages/session/file-tab-scroll"
 import { FileTabContent } from "@/pages/session/file-tabs"
 import { createOpenSessionFileTab, createSessionTabs, getTabReorderIndex, type Sizing } from "@/pages/session/helpers"
@@ -51,6 +52,7 @@ export function SessionSidePanel(props: {
   const platform = usePlatform()
   const settings = useSettings()
   const sync = useSync()
+  const serverSDK = useServerSDK()
   const file = useFile()
   const language = useLanguage()
   const command = useCommand()
@@ -74,14 +76,17 @@ export function SessionSidePanel(props: {
 
   const diffs = createMemo(() => props.diffs().filter(renderDiff))
   const diffFiles = createMemo(() => diffs().map((d) => d.file))
-  const receiptSummary = createMemo(() => ({
-    schema: "stealth.session.evidence.v0" as const,
-    sessionID: params.id ?? sessionKey(),
-    commandCount: 0,
-    changedFiles: diffFiles(),
-    diffSha256: null,
-    reasonCode: "PREVIEW",
-  }))
+  const receiptSummary = createMemo(() => {
+    const evidence = store.handoffEvidence
+    return {
+      schema: "stealth.session.evidence.v0" as const,
+      sessionID: params.id ?? sessionKey(),
+      commandCount: evidence?.commands?.length ?? 0,
+      changedFiles: evidence?.changes?.files_changed ?? diffFiles(),
+      diffSha256: evidence?.changes?.diff_sha256 ?? null,
+      reasonCode: evidence ? "EVIDENCE" : "PREVIEW",
+    }
+  })
 
   const kinds = createMemo(() => {
     const merge = (a: "add" | "del" | "mix" | undefined, b: "add" | "del" | "mix") => {
@@ -168,6 +173,13 @@ export function SessionSidePanel(props: {
 
   const [store, setStore] = createStore({
     activeDraggable: undefined as string | undefined,
+    handoffEvidence: undefined as
+      | {
+          schema?: string
+          commands?: unknown[]
+          changes?: { files_changed?: string[]; diff_sha256?: string | null }
+        }
+      | undefined,
   })
 
   const handleDragStart = (event: unknown) => {
@@ -189,6 +201,31 @@ export function SessionSidePanel(props: {
   const handleDragEnd = () => {
     setStore("activeDraggable", undefined)
   }
+
+  createEffect(() => {
+    const sessionID = params.id
+    if (!sessionID) return
+
+    let cancelled = false
+    const url = `${serverSDK.url}/session/${encodeURIComponent(sessionID)}/handoff`
+
+    void fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`handoff request failed: ${response.status}`)
+        return response.json()
+      })
+      .then((data) => {
+        if (cancelled) return
+        setStore("handoffEvidence", data)
+      })
+      .catch((error) => {
+        console.debug("[receipt-preview] failed to load handoff evidence", { sessionID, error })
+      })
+
+    onCleanup(() => {
+      cancelled = true
+    })
+  })
 
   createEffect(() => {
     setReceiptHandoff(sessionKey(), receiptSummary())
