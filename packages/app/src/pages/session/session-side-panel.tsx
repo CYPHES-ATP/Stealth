@@ -207,19 +207,35 @@ export function SessionSidePanel(props: {
     if (!sessionID) return
 
     let cancelled = false
-    const url = `${serverSDK.url}/session/${encodeURIComponent(sessionID)}/handoff`
 
-    void fetch(url)
-      .then((response) => {
-        if (!response.ok) throw new Error(`handoff request failed: ${response.status}`)
-        return response.json()
+    const rawClient = (
+      serverSDK.client as unknown as {
+        client: {
+          get: (input: { url: string; path: { sessionID: string } }) => Promise<{
+            data: {
+              schema?: string
+              commands?: unknown[]
+              changes?: { files_changed?: string[]; diff_sha256?: string | null }
+            }
+          }>
+        }
+      }
+    ).client
+
+    void rawClient
+      .get({
+        url: "/session/{sessionID}/handoff",
+        path: { sessionID },
       })
-      .then((data) => {
+      .then((result) => {
         if (cancelled) return
-        setStore("handoffEvidence", data)
+        setStore("handoffEvidence", result.data)
       })
       .catch((error) => {
-        console.debug("[receipt-preview] failed to load handoff evidence", { sessionID, error })
+        console.debug("[receipt-preview] failed to load handoff evidence", {
+          sessionID,
+          message: error instanceof Error ? error.message : String(error),
+        })
       })
 
     onCleanup(() => {
