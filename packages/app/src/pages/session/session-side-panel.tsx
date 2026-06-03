@@ -76,18 +76,6 @@ export function SessionSidePanel(props: {
 
   const diffs = createMemo(() => props.diffs().filter(renderDiff))
   const diffFiles = createMemo(() => diffs().map((d) => d.file))
-  const receiptSummary = createMemo(() => {
-    const evidence = store.handoffEvidence
-    return {
-      schema: "stealth.session.evidence.v0" as const,
-      sessionID: params.id ?? sessionKey(),
-      commandCount: evidence?.commands?.length ?? 0,
-      changedFiles: evidence?.changes?.files_changed ?? diffFiles(),
-      diffSha256: evidence?.changes?.diff_sha256 ?? null,
-      reasonCode: evidence ? "EVIDENCE" : "PREVIEW",
-    }
-  })
-
   const kinds = createMemo(() => {
     const merge = (a: "add" | "del" | "mix" | undefined, b: "add" | "del" | "mix") => {
       if (!a) return b
@@ -180,6 +168,18 @@ export function SessionSidePanel(props: {
           changes?: { files_changed?: string[]; diff_sha256?: string | null }
         }
       | undefined,
+  })
+
+  const receiptSummary = createMemo(() => {
+    const evidence = store.handoffEvidence
+    return {
+      schema: "stealth.session.evidence.v0" as const,
+      sessionID: params.id ?? sessionKey(),
+      commandCount: evidence?.commands?.length ?? 0,
+      changedFiles: evidence?.changes?.files_changed ?? diffFiles(),
+      diffSha256: evidence?.changes?.diff_sha256 ?? null,
+      reasonCode: evidence ? "EVIDENCE" : "PREVIEW",
+    }
   })
 
   const handleDragStart = (event: unknown) => {
