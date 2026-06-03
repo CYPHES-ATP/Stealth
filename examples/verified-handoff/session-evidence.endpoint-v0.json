@@ -1,0 +1,32 @@
+{
+  "schema": "stealth.session.evidence.v0",
+  "session_id": "ses_demo_endpoint_v0",
+  "directory": "/repo/demo",
+  "task": {
+    "title": "Demo endpoint handoff evidence",
+    "prompt": "Run a safe local command and report the result."
+  },
+  "agent": {
+    "id": "stealth-demo-agent",
+    "runtime": "Stealth"
+  },
+  "scope": {
+    "permission": []
+  },
+  "commands": [
+    {
+      "command": ".venv/bin/python src/realized_vol.py",
+      "exit_code": 0,
+      "stdout_summary": "[OK] realized sigma_5m=0.00165546"
+    }
+  ],
+  "changes": {
+    "files_changed": [],
+    "diff_sha256": null
+  },
+  "metadata": {
+    "message_count": 2,
+    "diff_count": 0,
+    "generated_by": "stealth.handoff.evidence.builder.v0"
+  }
+}
