@@ -7,16 +7,16 @@ Stealth is a confidential coding agent by CYPHES.
 The Apple Silicon test build is produced as:
 
 ```text
-packages/desktop/dist/Stealth-v1.0-mac-arm64.dmg
+https://stealth.cyphes.com/Stealth.dmg
 ```
 
 The Windows x64 test build is produced as:
 
 ```text
-packages/desktop/dist/Stealth-v1.0-win-x64.exe
+https://stealth.cyphes.com/Stealth.x64.exe
 ```
 
-For local testing, open the DMG, drag `Stealth.app` into Applications, then launch it from Applications.
+For local testing, open the DMG, drag `Stealth` into Applications, then launch it from Applications.
 
 macOS may warn because this local build is not notarized yet. If Gatekeeper blocks the app during testing:
 
@@ -123,4 +123,4 @@ Stealth keeps the same provider configuration behavior as opencode. You can stil
 
 ## Attribution
 
-Stealth is based on the MIT-licensed opencode desktop GUI by Anomaly Innovations, Inc. The CYPHES rebrand is maintained at [CYPHES-ATP/Stealth](https://github.com/CYPHES-ATP/Stealth).
+Stealth is based on the MIT-licensed opencode desktop GUI by Anomaly Innovations, Inc. CYPHES is maintained at [CYPHES-ATP/Stealth](https://github.com/CYPHES-ATP/Stealth).
