@@ -5,11 +5,22 @@ type HandoffSession = {
   files: Record<string, SelectedLineRange | null>
 }
 
+export type HandoffReceiptSummary = {
+  schema: "stealth.session.evidence.v0"
+  sessionID: string
+  commandCount: number
+  changedFiles: string[]
+  diffSha256: string | null
+  verifierStatus?: "OK" | "REJECT"
+  reasonCode?: string
+}
+
 const MAX = 40
 
 const store = {
   session: new Map<string, HandoffSession>(),
   terminal: new Map<string, string[]>(),
+  receipt: new Map<string, HandoffReceiptSummary>(),
 }
 
 const touch = <K, V>(map: Map<K, V>, key: K, value: V) => {
@@ -34,3 +45,9 @@ export const setTerminalHandoff = (key: string, value: string[]) => {
 }
 
 export const getTerminalHandoff = (key: string) => store.terminal.get(key)
+
+export const setReceiptHandoff = (key: string, value: HandoffReceiptSummary) => {
+  touch(store.receipt, key, value)
+}
+
+export const getReceiptHandoff = (key: string) => store.receipt.get(key)
