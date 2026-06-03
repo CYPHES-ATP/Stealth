@@ -1,6 +1,6 @@
 # Stealth
 
-Stealth v1.0 is the CYPHES-native desktop build of the opencode GUI. It keeps the underlying agent/runtime behavior intact while replacing the visible product identity, installer metadata, icons, menus, and theme with a high-contrast black and cyan CYPHES experience.
+Stealth is a confidential coding agent by CYPHES. 
 
 ## Download
 
