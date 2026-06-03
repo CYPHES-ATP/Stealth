@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { Schema } from "effect"
 import type { Snapshot } from "@/snapshot"
 import type { MessageV2 } from "@/session/message-v2"
 import type { Session } from "@/session/session"
@@ -35,6 +36,39 @@ export type HandoffEvidence = {
     generated_by: "stealth.handoff.evidence.builder.v0"
   }
 }
+
+export const HandoffEvidenceSchema = Schema.Struct({
+  schema: Schema.Literal("stealth.session.evidence.v0"),
+  session_id: Schema.String,
+  directory: Schema.String,
+  task: Schema.Struct({
+    title: Schema.optional(Schema.String),
+    prompt: Schema.optional(Schema.String),
+  }),
+  agent: Schema.Struct({
+    id: Schema.optional(Schema.String),
+    runtime: Schema.Literal("Stealth"),
+  }),
+  scope: Schema.Struct({
+    permission: Schema.optional(Schema.Unknown),
+  }),
+  commands: Schema.Array(
+    Schema.Struct({
+      command: Schema.String,
+      exit_code: Schema.optional(Schema.Number),
+      stdout_summary: Schema.optional(Schema.String),
+    }),
+  ),
+  changes: Schema.Struct({
+    files_changed: Schema.Array(Schema.String),
+    diff_sha256: Schema.NullOr(Schema.String),
+  }),
+  metadata: Schema.Struct({
+    message_count: Schema.Number,
+    diff_count: Schema.Number,
+    generated_by: Schema.Literal("stealth.handoff.evidence.builder.v0"),
+  }),
+})
 
 function sha256(input: string) {
   return createHash("sha256").update(input).digest("hex")

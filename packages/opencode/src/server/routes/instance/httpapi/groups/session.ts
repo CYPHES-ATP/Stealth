@@ -8,6 +8,7 @@ import { SessionRevert } from "@/session/revert"
 import { SessionStatus } from "@/session/status"
 import { SessionSummary } from "@/session/summary"
 import { Todo } from "@/session/todo"
+import { HandoffEvidenceSchema } from "@/session/handoff/evidence"
 import { MessageID, PartID, SessionID } from "@/session/schema"
 import { Snapshot } from "@/snapshot"
 import { Schema, Struct } from "effect"
@@ -79,6 +80,7 @@ export const SessionPaths = {
   children: `${root}/:sessionID/children`,
   todo: `${root}/:sessionID/todo`,
   diff: `${root}/:sessionID/diff`,
+  handoff: `${root}/:sessionID/handoff`,
   messages: `${root}/:sessionID/message`,
   message: `${root}/:sessionID/message/:messageID`,
   create: root,
@@ -171,6 +173,18 @@ export const SessionApi = HttpApi.make("session")
             identifier: "session.diff",
             summary: "Get message diff",
             description: "Get the file changes (diff) that resulted from a specific user message in the session.",
+          }),
+        ),
+        HttpApiEndpoint.get("handoff", SessionPaths.handoff, {
+          params: { sessionID: SessionID },
+          query: WorkspaceRoutingQuery,
+          success: described(HandoffEvidenceSchema, "Session handoff evidence"),
+          error: [HttpApiError.BadRequest, ApiNotFoundError],
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "session.handoff",
+            summary: "Get session handoff evidence",
+            description: "Build verifiable handoff evidence from session messages, commands, permissions, and diffs.",
           }),
         ),
         HttpApiEndpoint.get("messages", SessionPaths.messages, {
