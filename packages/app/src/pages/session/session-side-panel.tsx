@@ -25,7 +25,7 @@ import { useSync } from "@/context/sync"
 import { createFileTabListSync } from "@/pages/session/file-tab-scroll"
 import { FileTabContent } from "@/pages/session/file-tabs"
 import { createOpenSessionFileTab, createSessionTabs, getTabReorderIndex, type Sizing } from "@/pages/session/helpers"
-import { setSessionHandoff } from "@/pages/session/handoff"
+import { setReceiptHandoff, setSessionHandoff } from "@/pages/session/handoff"
 import { useSessionLayout } from "@/pages/session/session-layout"
 
 type RenderDiff = (SnapshotFileDiff & { file: string }) | VcsFileDiff
@@ -74,6 +74,15 @@ export function SessionSidePanel(props: {
 
   const diffs = createMemo(() => props.diffs().filter(renderDiff))
   const diffFiles = createMemo(() => diffs().map((d) => d.file))
+  const receiptSummary = createMemo(() => ({
+    schema: "stealth.session.evidence.v0" as const,
+    sessionID: params.id ?? sessionKey(),
+    commandCount: 0,
+    changedFiles: diffFiles(),
+    diffSha256: null,
+    reasonCode: "PREVIEW",
+  }))
+
   const kinds = createMemo(() => {
     const merge = (a: "add" | "del" | "mix" | undefined, b: "add" | "del" | "mix") => {
       if (!a) return b
@@ -180,6 +189,10 @@ export function SessionSidePanel(props: {
   const handleDragEnd = () => {
     setStore("activeDraggable", undefined)
   }
+
+  createEffect(() => {
+    setReceiptHandoff(sessionKey(), receiptSummary())
+  })
 
   createEffect(() => {
     if (!file.ready()) return
@@ -310,7 +323,26 @@ export function SessionSidePanel(props: {
 
                     <Show when={reviewTab() && props.canReview()}>
                       <Tabs.Content value="review" class="flex flex-col h-full overflow-hidden contain-strict">
-                        <Show when={reviewOpen() && activeTab() === "review"}>{props.reviewPanel()}</Show>
+                        <Show when={reviewOpen() && activeTab() === "review"}>
+                          <div class="shrink-0 mx-3 mt-3 mb-2 rounded-md border border-border-weak-base bg-surface-panel px-3 py-2">
+                            <div class="flex items-center justify-between gap-3">
+                              <div class="min-w-0">
+                                <div class="text-12-semibold text-text-base">Receipt preview</div>
+                                <div class="text-11-regular text-text-weak truncate">
+                                  schema: {receiptSummary().schema}
+                                </div>
+                              </div>
+                              <div class="shrink-0 rounded-full border border-border-weak-base px-2 py-0.5 text-11-regular text-text-weak">
+                                {receiptSummary().reasonCode}
+                              </div>
+                            </div>
+                            <div class="mt-2 flex gap-3 text-11-regular text-text-weak">
+                              <span>commands: {receiptSummary().commandCount}</span>
+                              <span>changed files: {receiptSummary().changedFiles.length}</span>
+                            </div>
+                          </div>
+                          {props.reviewPanel()}
+                        </Show>
                       </Tabs.Content>
                     </Show>
 
