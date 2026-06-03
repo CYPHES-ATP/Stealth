@@ -1,0 +1,35 @@
+{
+  "schema": "stealth.session.evidence.v0",
+  "task": {
+    "id": "task_real_smoke_test_001",
+    "title": "Run safe local smoke test from a real Stealth Windows session",
+    "scope": {
+      "allowed_files": [],
+      "allowed_commands": [
+        ".venv/bin/python src/realized_vol.py"
+      ],
+      "network_allowed": false
+    }
+  },
+  "agent": {
+    "id": "stealth-windows-build-test",
+    "runtime": "Stealth"
+  },
+  "changes": {
+    "files_changed": [],
+    "diff_sha256": "no-diff-read-only-smoke-test"
+  },
+  "commands": [
+    {
+      "command": ".venv/bin/python src/realized_vol.py",
+      "exit_code": 0,
+      "stdout_summary": "[OK] realized sigma_5m=0.00165546 sigma_1h=0.0057347 sigma_1d=0.0280942"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "smoke-test-summary",
+      "sha256": "real-smoke-test-summary-v0"
+    }
+  ]
+}
