@@ -182,6 +182,26 @@ export function SessionSidePanel(props: {
     }
   })
 
+  const shortValue = (value: string, head = 10, tail = 4) =>
+    value.length > head + tail + 1 ? `${value.slice(0, head)}…${value.slice(-tail)}` : value
+
+  const commandPreview = createMemo(() =>
+    (store.handoffEvidence?.commands ?? [])
+      .map((item) =>
+        item && typeof item === "object" && "command" in item && typeof item.command === "string"
+          ? item.command
+          : undefined,
+      )
+      .filter((command): command is string => !!command)
+      .slice(0, 3),
+  )
+
+  const changedFilePreview = createMemo(() => receiptSummary().changedFiles.slice(0, 5))
+  const diffHashPreview = createMemo(() => {
+    const hash = receiptSummary().diffSha256
+    return hash ? hash.slice(0, 12) : "none"
+  })
+
   const handleDragStart = (event: unknown) => {
     const id = getDraggableId(event)
     if (!id) return
@@ -389,10 +409,31 @@ export function SessionSidePanel(props: {
                                 {receiptSummary().reasonCode}
                               </div>
                             </div>
-                            <div class="mt-2 flex gap-3 text-11-regular text-text-weak">
+
+                            <div class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-11-regular text-text-weak">
+                              <span>session: {shortValue(receiptSummary().sessionID)}</span>
+                              <span>diff: {diffHashPreview()}</span>
                               <span>commands: {receiptSummary().commandCount}</span>
                               <span>changed files: {receiptSummary().changedFiles.length}</span>
                             </div>
+
+                            <Show when={commandPreview().length}>
+                              <div class="mt-2 space-y-1 text-11-regular text-text-weak">
+                                <div class="text-text-base">commands</div>
+                                <For each={commandPreview()}>
+                                  {(command) => <div class="truncate font-mono">{command}</div>}
+                                </For>
+                              </div>
+                            </Show>
+
+                            <Show when={changedFilePreview().length}>
+                              <div class="mt-2 space-y-1 text-11-regular text-text-weak">
+                                <div class="text-text-base">changed files</div>
+                                <For each={changedFilePreview()}>
+                                  {(file) => <div class="truncate font-mono">{file}</div>}
+                                </For>
+                              </div>
+                            </Show>
                           </div>
                           {props.reviewPanel()}
                         </Show>
