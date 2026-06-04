@@ -16,6 +16,20 @@ export function DialogReceiptExplorer(props: {
   const changedFiles = createMemo(() => props.evidence.changes?.files_changed ?? props.summary.changedFiles)
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
+  const permissionJson = createMemo(() => {
+    const permission = props.evidence.scope?.permission
+    if (permission === undefined || permission === null) return null
+    try {
+      return JSON.stringify(permission, null, 2)
+    } catch {
+      return String(permission)
+    }
+  })
+  const scopeStatus = createMemo(() =>
+    props.evidence.scope && props.evidence.scope.permission !== undefined && props.evidence.scope.permission !== null
+      ? "within captured scope"
+      : "scope not fully specified",
+  )
 
   const copyJson = () => {
     if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
@@ -91,6 +105,58 @@ export function DialogReceiptExplorer(props: {
                 </Show>
               </div>
             </Show>
+
+            <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+              <div class="mb-2 text-12-semibold text-text-base">Authority / Scope</div>
+              <div class="mb-3 grid grid-cols-2 gap-x-3 gap-y-2 text-11-regular text-text-weak">
+                <span>workspace: {props.evidence.directory ?? "unknown"}</span>
+                <span>network: unknown</span>
+                <span>command count: {commands().length}</span>
+                <span>changed files: {changedFiles().length}</span>
+              </div>
+
+              <div class="mb-3">
+                <div class="mb-1 flex items-center justify-between gap-2">
+                  <div class="text-11-medium text-text-base">Scope status</div>
+                  <span class="rounded-full border border-border-weak-base px-2 py-0.5 text-10-regular text-text-weak">
+                    {scopeStatus()}
+                  </span>
+                </div>
+                <div class="text-10-regular text-text-weak">
+                  {scopeStatus() === "within captured scope"
+                    ? "Scope data is present in captured evidence."
+                    : "Scope evidence is missing or incomplete, so authority boundaries are not fully specified here."}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="text-11-medium text-text-base">Captured permissions</div>
+                <div class="mt-1 max-h-32 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2">
+                  <Show
+                    when={permissionJson()}
+                    fallback={<div class="text-10-regular text-text-weak">No scope permission captured.</div>}
+                  >
+                    <pre class="whitespace-pre-wrap break-words font-mono text-10-regular text-text-weak">
+                      {permissionJson()}
+                    </pre>
+                  </Show>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-11-medium text-text-base">Changed files</div>
+                <div class="mt-1 max-h-40 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2">
+                  <Show
+                    when={changedFiles().length}
+                    fallback={<div class="text-10-regular text-text-weak">No changed files captured.</div>}
+                  >
+                    <For each={changedFiles()}>
+                      {(file) => <div class="truncate font-mono text-10-regular text-text-weak">{file}</div>}
+                    </For>
+                  </Show>
+                </div>
+              </div>
+            </div>
 
             <div class="rounded-md border border-border-weak-base bg-background-base p-3">
               <div class="mb-2 text-12-semibold text-text-base">Changes</div>
