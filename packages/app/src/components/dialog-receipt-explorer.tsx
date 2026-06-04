@@ -1,0 +1,156 @@
+import { For, Show, createMemo } from "solid-js"
+import { Dialog } from "@opencode-ai/ui/dialog"
+import { useDialog } from "@opencode-ai/ui/context/dialog"
+import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/handoff"
+
+function evidenceToJson(evidence: HandoffEvidence) {
+  return JSON.stringify(evidence, null, 2)
+}
+
+export function DialogReceiptExplorer(props: {
+  evidence: HandoffEvidence
+  summary: HandoffReceiptSummary
+}) {
+  const dialog = useDialog()
+
+  const changedFiles = createMemo(() => props.evidence.changes?.files_changed ?? props.summary.changedFiles)
+  const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
+  const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
+
+  const copyJson = () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
+    void navigator.clipboard.writeText(evidenceJson())
+  }
+
+  return (
+    <Dialog
+      title="Receipt details"
+      size="x-large"
+      class="w-[min(calc(100vw-40px),920px)] h-[min(calc(100vh-40px),760px)] min-h-0 overflow-hidden"
+    >
+      <div class="flex h-full min-h-0 flex-col gap-3 p-1">
+        <div class="flex items-center justify-between gap-3 rounded-md border border-border-weak-base bg-surface-panel px-3 py-2">
+          <div class="min-w-0">
+            <div class="text-13-semibold text-text-base">Receipt Explorer</div>
+            <div class="text-11-regular text-text-weak">
+              Compatible with the ReceiptOS-PQ verifier flow.
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={copyJson}
+            >
+              Copy JSON
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={() => dialog.close()}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,360px)]">
+          <div class="min-h-0 space-y-3 overflow-auto pr-1">
+            <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+              <div class="mb-2 text-12-semibold text-text-base">Receipt summary</div>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-11-regular text-text-weak">
+                <span>session: {props.evidence.session_id ?? props.summary.sessionID}</span>
+                <span>schema: {props.evidence.schema ?? props.summary.schema}</span>
+                <span>agent: {props.evidence.agent?.id ?? "unknown"}</span>
+                <span>runtime: {props.evidence.agent?.runtime ?? "unknown"}</span>
+                <Show when={props.evidence.agent?.model}>
+                  <span>model: {props.evidence.agent?.model}</span>
+                </Show>
+                <span>messages: {props.evidence.metadata?.message_count ?? 0}</span>
+                <span>diffs: {props.evidence.metadata?.diff_count ?? 0}</span>
+                <span>generator: {props.evidence.metadata?.generated_by ?? "unknown"}</span>
+              </div>
+            </div>
+
+            <Show when={props.evidence.task?.title || props.evidence.task?.prompt}>
+              <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+                <div class="mb-2 text-12-semibold text-text-base">Task</div>
+                <Show when={props.evidence.task?.title}>
+                  <div class="mb-2">
+                    <div class="text-11-medium text-text-base">Title</div>
+                    <div class="break-words text-11-regular text-text-weak">{props.evidence.task?.title}</div>
+                  </div>
+                </Show>
+                <Show when={props.evidence.task?.prompt}>
+                  <div>
+                    <div class="text-11-medium text-text-base">Prompt</div>
+                    <div class="max-h-32 overflow-auto whitespace-pre-wrap rounded border border-border-weak-base bg-surface-panel p-2 font-mono text-10-regular text-text-weak">
+                      {props.evidence.task?.prompt}
+                    </div>
+                  </div>
+                </Show>
+              </div>
+            </Show>
+
+            <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+              <div class="mb-2 text-12-semibold text-text-base">Changes</div>
+              <div class="mb-3">
+                <div class="text-11-medium text-text-base">Diff hash</div>
+                <div class="mt-1 break-all rounded border border-border-weak-base bg-surface-panel p-2 font-mono text-10-regular text-text-weak">
+                  {props.evidence.changes?.diff_sha256 ?? props.summary.diffSha256 ?? "none"}
+                </div>
+              </div>
+              <div>
+                <div class="text-11-medium text-text-base">Changed files</div>
+                <div class="mt-1 max-h-40 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2">
+                  <Show
+                    when={changedFiles().length}
+                    fallback={<div class="text-10-regular text-text-weak">No changed files captured.</div>}
+                  >
+                    <For each={changedFiles()}>
+                      {(file) => <div class="truncate font-mono text-10-regular text-text-weak">{file}</div>}
+                    </For>
+                  </Show>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+              <div class="mb-2 text-12-semibold text-text-base">Command summary</div>
+              <div class="max-h-56 space-y-2 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2">
+                <Show
+                  when={commands().length}
+                  fallback={<div class="text-10-regular text-text-weak">No command evidence captured.</div>}
+                >
+                  <For each={commands()}>
+                    {(command, index) => (
+                      <div class="space-y-1 text-10-regular text-text-weak">
+                        <div class="font-mono break-all text-text-base">{index() + 1}. {command.command}</div>
+                        <div>exit: {typeof command.exit_code === "number" ? command.exit_code : "n/a"}</div>
+                        <Show when={command.stdout_summary}>
+                          <div class="whitespace-pre-wrap break-words">{command.stdout_summary}</div>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </Show>
+              </div>
+            </div>
+          </div>
+
+          <div class="min-h-0 overflow-hidden rounded-md border border-border-weak-base bg-background-base p-3">
+            <div class="mb-2 flex items-center justify-between gap-2">
+              <div class="text-12-semibold text-text-base">Full evidence JSON</div>
+              <span class="rounded-full border border-border-weak-base px-2 py-0.5 text-10-regular text-text-weak">
+                ReceiptOS-PQ-ready
+              </span>
+            </div>
+            <pre class="h-full max-h-full overflow-auto rounded border border-border-weak-base bg-surface-panel p-2 text-10-regular text-text-weak">
+              {evidenceJson()}
+            </pre>
+          </div>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
