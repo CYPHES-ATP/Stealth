@@ -172,11 +172,13 @@ export function SessionSidePanel(props: {
 
   const receiptSummary = createMemo(() => {
     const evidence = store.handoffEvidence
+    const liveChangedFiles = diffFiles()
+    const evidenceChangedFiles = evidence?.changes?.files_changed
     return {
       schema: "stealth.session.evidence.v0" as const,
       sessionID: params.id ?? sessionKey(),
       commandCount: evidence?.commands?.length ?? 0,
-      changedFiles: evidence?.changes?.files_changed ?? diffFiles(),
+      changedFiles: evidenceChangedFiles?.length ? evidenceChangedFiles : liveChangedFiles,
       diffSha256: evidence?.changes?.diff_sha256 ?? null,
       reasonCode: evidence ? "EVIDENCE" : "PREVIEW",
     }
@@ -224,6 +226,8 @@ export function SessionSidePanel(props: {
 
   createEffect(() => {
     const sessionID = params.id
+    const diffDependency = diffFiles().join("\n")
+    void diffDependency
     if (!sessionID) return
 
     let cancelled = false
