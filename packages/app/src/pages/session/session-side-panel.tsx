@@ -164,8 +164,14 @@ export function SessionSidePanel(props: {
     handoffEvidence: undefined as
       | {
           schema?: string
+          session_id?: string
+          directory?: string
+          task?: { title?: string; prompt?: string }
+          agent?: { id?: string; runtime?: string }
+          scope?: { permission?: unknown }
           commands?: unknown[]
           changes?: { files_changed?: string[]; diff_sha256?: string | null }
+          metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
         }
       | undefined,
   })
@@ -204,6 +210,18 @@ export function SessionSidePanel(props: {
     return hash ? hash.slice(0, 12) : "none"
   })
 
+  const evidenceJsonPreview = createMemo(() => {
+    const evidence = store.handoffEvidence
+    return evidence ? JSON.stringify(evidence, null, 2) : ""
+  })
+
+  const copyEvidenceJson = () => {
+    const value = evidenceJsonPreview()
+    if (!value) return
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
+    void navigator.clipboard.writeText(value)
+  }
+
   const handleDragStart = (event: unknown) => {
     const id = getDraggableId(event)
     if (!id) return
@@ -238,8 +256,14 @@ export function SessionSidePanel(props: {
           get: (input: { url: string; path: { sessionID: string } }) => Promise<{
             data: {
               schema?: string
+              session_id?: string
+              directory?: string
+              task?: { title?: string; prompt?: string }
+              agent?: { id?: string; runtime?: string }
+              scope?: { permission?: unknown }
               commands?: unknown[]
               changes?: { files_changed?: string[]; diff_sha256?: string | null }
+              metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
             }
           }>
         }
@@ -437,6 +461,41 @@ export function SessionSidePanel(props: {
                                   {(file) => <div class="truncate font-mono">{file}</div>}
                                 </For>
                               </div>
+                            </Show>
+
+                            <Show when={store.handoffEvidence}>
+                              {(evidence) => (
+                                <div class="mt-3 space-y-2 border-t border-border-weak-base pt-2 text-11-regular text-text-weak">
+                                  <div class="flex items-center justify-between gap-2">
+                                    <div class="text-text-base">full receipt evidence</div>
+                                    <button
+                                      type="button"
+                                      class="rounded border border-border-weak-base px-2 py-0.5 text-11-regular text-text-weak hover:text-text-base"
+                                      onClick={copyEvidenceJson}
+                                    >
+                                      Copy JSON
+                                    </button>
+                                  </div>
+
+                                  <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                                    <span>agent: {evidence().agent?.id ?? "unknown"}</span>
+                                    <span>runtime: {evidence().agent?.runtime ?? "unknown"}</span>
+                                    <span>messages: {evidence().metadata?.message_count ?? 0}</span>
+                                    <span>diffs: {evidence().metadata?.diff_count ?? 0}</span>
+                                  </div>
+
+                                  <Show when={evidence().task?.prompt}>
+                                    <div>
+                                      <div class="text-text-base">prompt</div>
+                                      <div class="line-clamp-3 font-mono">{evidence().task?.prompt}</div>
+                                    </div>
+                                  </Show>
+
+                                  <pre class="max-h-40 overflow-auto rounded border border-border-weak-base bg-background-base p-2 text-10-regular text-text-weak">
+                                    {evidenceJsonPreview()}
+                                  </pre>
+                                </div>
+                              )}
                             </Show>
                           </div>
                           {props.reviewPanel()}
