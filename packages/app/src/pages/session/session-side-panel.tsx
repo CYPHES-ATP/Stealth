@@ -167,9 +167,9 @@ export function SessionSidePanel(props: {
           session_id?: string
           directory?: string
           task?: { title?: string; prompt?: string }
-          agent?: { id?: string; runtime?: string }
+          agent?: { id?: string; runtime?: string; model?: string }
           scope?: { permission?: unknown }
-          commands?: unknown[]
+          commands?: { command?: string; exit_code?: number; stdout_summary?: string }[]
           changes?: { files_changed?: string[]; diff_sha256?: string | null }
           metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
         }
@@ -195,16 +195,23 @@ export function SessionSidePanel(props: {
 
   const commandPreview = createMemo(() =>
     (store.handoffEvidence?.commands ?? [])
-      .map((item) =>
-        item && typeof item === "object" && "command" in item && typeof item.command === "string"
-          ? item.command
-          : undefined,
-      )
+      .map((item) => (typeof item?.command === "string" ? item.command : undefined))
       .filter((command): command is string => !!command)
       .slice(0, 3),
   )
 
+  const commandDetails = createMemo(() =>
+    (store.handoffEvidence?.commands ?? [])
+      .map((item) => ({
+        command: typeof item?.command === "string" ? item.command : undefined,
+        exitCode: typeof item?.exit_code === "number" ? item.exit_code : undefined,
+        stdoutSummary: typeof item?.stdout_summary === "string" ? item.stdout_summary : undefined,
+      }))
+      .filter((item) => !!item.command),
+  )
+
   const changedFilePreview = createMemo(() => receiptSummary().changedFiles.slice(0, 5))
+  const fullChangedFiles = createMemo(() => store.handoffEvidence?.changes?.files_changed ?? receiptSummary().changedFiles)
   const diffHashPreview = createMemo(() => {
     const hash = receiptSummary().diffSha256
     return hash ? hash.slice(0, 12) : "none"
@@ -259,9 +266,9 @@ export function SessionSidePanel(props: {
               session_id?: string
               directory?: string
               task?: { title?: string; prompt?: string }
-              agent?: { id?: string; runtime?: string }
+              agent?: { id?: string; runtime?: string; model?: string }
               scope?: { permission?: unknown }
-              commands?: unknown[]
+              commands?: { command?: string; exit_code?: number; stdout_summary?: string }[]
               changes?: { files_changed?: string[]; diff_sha256?: string | null }
               metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
             }
@@ -465,7 +472,7 @@ export function SessionSidePanel(props: {
 
                             <Show when={store.handoffEvidence}>
                               {(evidence) => (
-                                <div class="mt-3 space-y-2 border-t border-border-weak-base pt-2 text-11-regular text-text-weak">
+                                <div class="mt-3 border-t border-border-weak-base pt-2 text-11-regular text-text-weak">
                                   <div class="flex items-center justify-between gap-2">
                                     <div class="text-text-base">full receipt evidence</div>
                                     <button
@@ -477,23 +484,83 @@ export function SessionSidePanel(props: {
                                     </button>
                                   </div>
 
-                                  <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                                  <div class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                    <span>session: {evidence().session_id ?? receiptSummary().sessionID}</span>
+                                    <span>schema: {evidence().schema ?? receiptSummary().schema}</span>
                                     <span>agent: {evidence().agent?.id ?? "unknown"}</span>
                                     <span>runtime: {evidence().agent?.runtime ?? "unknown"}</span>
+                                    <Show when={evidence().agent?.model}>
+                                      <span>model: {evidence().agent?.model}</span>
+                                    </Show>
                                     <span>messages: {evidence().metadata?.message_count ?? 0}</span>
                                     <span>diffs: {evidence().metadata?.diff_count ?? 0}</span>
+                                    <span>generator: {evidence().metadata?.generated_by ?? "unknown"}</span>
                                   </div>
 
-                                  <Show when={evidence().task?.prompt}>
-                                    <div>
-                                      <div class="text-text-base">prompt</div>
-                                      <div class="line-clamp-3 font-mono">{evidence().task?.prompt}</div>
+                                  <Show when={evidence().task?.title || evidence().task?.prompt}>
+                                    <div class="mt-3 space-y-2">
+                                      <Show when={evidence().task?.title}>
+                                        <div>
+                                          <div class="text-text-base">task</div>
+                                          <div class="break-words">{evidence().task?.title}</div>
+                                        </div>
+                                      </Show>
+                                      <Show when={evidence().task?.prompt}>
+                                        <div>
+                                          <div class="text-text-base">prompt</div>
+                                          <div class="max-h-24 overflow-auto whitespace-pre-wrap rounded border border-border-weak-base bg-background-base p-2 font-mono text-10-regular text-text-weak">
+                                            {evidence().task?.prompt}
+                                          </div>
+                                        </div>
+                                      </Show>
                                     </div>
                                   </Show>
 
-                                  <pre class="max-h-40 overflow-auto rounded border border-border-weak-base bg-background-base p-2 text-10-regular text-text-weak">
-                                    {evidenceJsonPreview()}
-                                  </pre>
+                                  <Show when={fullChangedFiles().length}>
+                                    <div class="mt-3 space-y-1">
+                                      <div class="text-text-base">changed files</div>
+                                      <div class="max-h-24 overflow-auto rounded border border-border-weak-base bg-background-base p-2">
+                                        <For each={fullChangedFiles()}>
+                                          {(file) => <div class="truncate font-mono text-10-regular">{file}</div>}
+                                        </For>
+                                      </div>
+                                    </div>
+                                  </Show>
+
+                                  <div class="mt-3 space-y-1">
+                                    <div class="text-text-base">diff hash</div>
+                                    <div class="rounded border border-border-weak-base bg-background-base p-2 font-mono text-10-regular break-all">
+                                      {evidence().changes?.diff_sha256 ?? "none"}
+                                    </div>
+                                  </div>
+
+                                  <Show when={commandDetails().length}>
+                                    <div class="mt-3 space-y-1">
+                                      <div class="text-text-base">command summary</div>
+                                      <div class="max-h-32 space-y-2 overflow-auto rounded border border-border-weak-base bg-background-base p-2">
+                                        <For each={commandDetails()}>
+                                          {(command, index) => (
+                                            <div class="space-y-1 text-10-regular">
+                                              <div class="font-mono break-all">{index() + 1}. {command.command}</div>
+                                              <div class="flex flex-wrap gap-x-3 text-text-weak">
+                                                <span>exit: {command.exitCode ?? "n/a"}</span>
+                                              </div>
+                                              <Show when={command.stdoutSummary}>
+                                                <div class="whitespace-pre-wrap break-words text-text-weak">{command.stdoutSummary}</div>
+                                              </Show>
+                                            </div>
+                                          )}
+                                        </For>
+                                      </div>
+                                    </div>
+                                  </Show>
+
+                                  <details class="mt-3 rounded border border-border-weak-base bg-background-base">
+                                    <summary class="cursor-pointer select-none px-2 py-1 text-text-base">full evidence JSON</summary>
+                                    <pre class="max-h-56 overflow-auto border-t border-border-weak-base p-2 text-10-regular text-text-weak">
+                                      {evidenceJsonPreview()}
+                                    </pre>
+                                  </details>
                                 </div>
                               )}
                             </Show>
