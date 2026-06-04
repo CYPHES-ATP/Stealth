@@ -15,6 +15,24 @@ export type HandoffReceiptSummary = {
   reasonCode?: string
 }
 
+export type HandoffEvidenceCommand = {
+  command?: string
+  exit_code?: number
+  stdout_summary?: string
+}
+
+export type HandoffEvidence = {
+  schema?: string
+  session_id?: string
+  directory?: string
+  task?: { title?: string; prompt?: string }
+  agent?: { id?: string; runtime?: string; model?: string }
+  scope?: { permission?: unknown }
+  commands?: HandoffEvidenceCommand[]
+  changes?: { files_changed?: string[]; diff_sha256?: string | null }
+  metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
+}
+
 const MAX = 40
 
 const store = {

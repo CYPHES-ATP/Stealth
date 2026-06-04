@@ -26,7 +26,8 @@ import { useServerSDK } from "@/context/server-sdk"
 import { createFileTabListSync } from "@/pages/session/file-tab-scroll"
 import { FileTabContent } from "@/pages/session/file-tabs"
 import { createOpenSessionFileTab, createSessionTabs, getTabReorderIndex, type Sizing } from "@/pages/session/helpers"
-import { setReceiptHandoff, setSessionHandoff } from "@/pages/session/handoff"
+import { DialogReceiptExplorer } from "@/components/dialog-receipt-explorer"
+import { setReceiptHandoff, setSessionHandoff, type HandoffEvidence } from "@/pages/session/handoff"
 import { useSessionLayout } from "@/pages/session/session-layout"
 
 type RenderDiff = (SnapshotFileDiff & { file: string }) | VcsFileDiff
@@ -161,19 +162,7 @@ export function SessionSidePanel(props: {
 
   const [store, setStore] = createStore({
     activeDraggable: undefined as string | undefined,
-    handoffEvidence: undefined as
-      | {
-          schema?: string
-          session_id?: string
-          directory?: string
-          task?: { title?: string; prompt?: string }
-          agent?: { id?: string; runtime?: string; model?: string }
-          scope?: { permission?: unknown }
-          commands?: { command?: string; exit_code?: number; stdout_summary?: string }[]
-          changes?: { files_changed?: string[]; diff_sha256?: string | null }
-          metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
-        }
-      | undefined,
+    handoffEvidence: undefined as HandoffEvidence | undefined,
   })
 
   const receiptSummary = createMemo(() => {
@@ -261,17 +250,7 @@ export function SessionSidePanel(props: {
       serverSDK.client as unknown as {
         client: {
           get: (input: { url: string; path: { sessionID: string } }) => Promise<{
-            data: {
-              schema?: string
-              session_id?: string
-              directory?: string
-              task?: { title?: string; prompt?: string }
-              agent?: { id?: string; runtime?: string; model?: string }
-              scope?: { permission?: unknown }
-              commands?: { command?: string; exit_code?: number; stdout_summary?: string }[]
-              changes?: { files_changed?: string[]; diff_sha256?: string | null }
-              metadata?: { message_count?: number; diff_count?: number; generated_by?: string }
-            }
+            data: HandoffEvidence
           }>
         }
       }
@@ -474,93 +453,40 @@ export function SessionSidePanel(props: {
                               {(evidence) => (
                                 <div class="mt-3 border-t border-border-weak-base pt-2 text-11-regular text-text-weak">
                                   <div class="flex items-center justify-between gap-2">
-                                    <div class="text-text-base">full receipt evidence</div>
-                                    <button
-                                      type="button"
-                                      class="rounded border border-border-weak-base px-2 py-0.5 text-11-regular text-text-weak hover:text-text-base"
-                                      onClick={copyEvidenceJson}
-                                    >
-                                      Copy JSON
-                                    </button>
+                                    <div>
+                                      <div class="text-text-base">receipt details</div>
+                                      <div class="text-10-regular text-text-weak">
+                                        Compatible with the ReceiptOS-PQ verifier flow.
+                                      </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        class="rounded border border-border-weak-base px-2 py-0.5 text-11-regular text-text-weak hover:text-text-base"
+                                        onClick={() =>
+                                          dialog.show(() => (
+                                            <DialogReceiptExplorer evidence={evidence()} summary={receiptSummary()} />
+                                          ))
+                                        }
+                                      >
+                                        Open receipt
+                                      </button>
+                                      <button
+                                        type="button"
+                                        class="rounded border border-border-weak-base px-2 py-0.5 text-11-regular text-text-weak hover:text-text-base"
+                                        onClick={copyEvidenceJson}
+                                      >
+                                        Copy JSON
+                                      </button>
+                                    </div>
                                   </div>
 
                                   <div class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-                                    <span>session: {evidence().session_id ?? receiptSummary().sessionID}</span>
-                                    <span>schema: {evidence().schema ?? receiptSummary().schema}</span>
                                     <span>agent: {evidence().agent?.id ?? "unknown"}</span>
                                     <span>runtime: {evidence().agent?.runtime ?? "unknown"}</span>
-                                    <Show when={evidence().agent?.model}>
-                                      <span>model: {evidence().agent?.model}</span>
-                                    </Show>
-                                    <span>messages: {evidence().metadata?.message_count ?? 0}</span>
-                                    <span>diffs: {evidence().metadata?.diff_count ?? 0}</span>
-                                    <span>generator: {evidence().metadata?.generated_by ?? "unknown"}</span>
+                                    <span>commands: {commandDetails().length}</span>
+                                    <span>changed files: {fullChangedFiles().length}</span>
                                   </div>
-
-                                  <Show when={evidence().task?.title || evidence().task?.prompt}>
-                                    <div class="mt-3 space-y-2">
-                                      <Show when={evidence().task?.title}>
-                                        <div>
-                                          <div class="text-text-base">task</div>
-                                          <div class="break-words">{evidence().task?.title}</div>
-                                        </div>
-                                      </Show>
-                                      <Show when={evidence().task?.prompt}>
-                                        <div>
-                                          <div class="text-text-base">prompt</div>
-                                          <div class="max-h-24 overflow-auto whitespace-pre-wrap rounded border border-border-weak-base bg-background-base p-2 font-mono text-10-regular text-text-weak">
-                                            {evidence().task?.prompt}
-                                          </div>
-                                        </div>
-                                      </Show>
-                                    </div>
-                                  </Show>
-
-                                  <Show when={fullChangedFiles().length}>
-                                    <div class="mt-3 space-y-1">
-                                      <div class="text-text-base">changed files</div>
-                                      <div class="max-h-24 overflow-auto rounded border border-border-weak-base bg-background-base p-2">
-                                        <For each={fullChangedFiles()}>
-                                          {(file) => <div class="truncate font-mono text-10-regular">{file}</div>}
-                                        </For>
-                                      </div>
-                                    </div>
-                                  </Show>
-
-                                  <div class="mt-3 space-y-1">
-                                    <div class="text-text-base">diff hash</div>
-                                    <div class="rounded border border-border-weak-base bg-background-base p-2 font-mono text-10-regular break-all">
-                                      {evidence().changes?.diff_sha256 ?? "none"}
-                                    </div>
-                                  </div>
-
-                                  <Show when={commandDetails().length}>
-                                    <div class="mt-3 space-y-1">
-                                      <div class="text-text-base">command summary</div>
-                                      <div class="max-h-32 space-y-2 overflow-auto rounded border border-border-weak-base bg-background-base p-2">
-                                        <For each={commandDetails()}>
-                                          {(command, index) => (
-                                            <div class="space-y-1 text-10-regular">
-                                              <div class="font-mono break-all">{index() + 1}. {command.command}</div>
-                                              <div class="flex flex-wrap gap-x-3 text-text-weak">
-                                                <span>exit: {command.exitCode ?? "n/a"}</span>
-                                              </div>
-                                              <Show when={command.stdoutSummary}>
-                                                <div class="whitespace-pre-wrap break-words text-text-weak">{command.stdoutSummary}</div>
-                                              </Show>
-                                            </div>
-                                          )}
-                                        </For>
-                                      </div>
-                                    </div>
-                                  </Show>
-
-                                  <details class="mt-3 rounded border border-border-weak-base bg-background-base">
-                                    <summary class="cursor-pointer select-none px-2 py-1 text-text-base">full evidence JSON</summary>
-                                    <pre class="max-h-56 overflow-auto border-t border-border-weak-base p-2 text-10-regular text-text-weak">
-                                      {evidenceJsonPreview()}
-                                    </pre>
-                                  </details>
                                 </div>
                               )}
                             </Show>
