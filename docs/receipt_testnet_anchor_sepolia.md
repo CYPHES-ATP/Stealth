@@ -4,8 +4,6 @@
 
 This document describes the smallest intended live anchoring path for Stealth receipt commitments on **Ethereum Sepolia**.
 
-It does **not** add a deployable script yet, because the repo currently does not contain a minimal Solidity compile/deploy toolchain.
-
 ## Scope
 
 Sepolia only.
@@ -17,60 +15,83 @@ The model remains:
 
 ## Required environment variables
 
-Any future live testnet deployment/anchor flow should require:
+Any live testnet deployment/anchor flow requires:
 
 - `SEPOLIA_RPC_URL`
 - `SEPOLIA_PRIVATE_KEY`
 
-Never commit private keys.
-Never hardcode them in scripts or docs examples.
+PowerShell example:
 
-## Intended flow
-
-### Step 1: keep receipt evidence off-chain
-Use a local receipt JSON file such as:
-
-```text
-examples/receipt-anchor/sample-receipt.json
+```powershell
+$env:SEPOLIA_RPC_URL="<your-sepolia-rpc-url>"
+$env:SEPOLIA_PRIVATE_KEY="<your-private-key>"
 ```
 
-### Step 2: compute the root locally
-Run:
+Never commit private keys.
+Never hardcode them in scripts or docs examples.
+Never paste private keys into chat or logs.
+Use a throwaway testnet wallet only.
+
+## Commands
+
+### Step 1: compute the root locally
 
 ```bash
 node scripts/receipt-anchor/compute-root.mjs examples/receipt-anchor/sample-receipt.json
 ```
 
-This produces the deterministic `receiptRoot`.
-
-### Step 3: deploy `ReceiptAnchor` to Sepolia later
-Contract:
-
-```text
-contracts/ReceiptAnchor.sol
-```
-
-Deployment should happen only after a minimal compile/deploy toolchain is added.
-
-### Step 4: anchor the root
-Future call shape:
-
-```text
-anchorReceipt(receiptRoot, metadataURI)
-```
-
-Only the root and optional metadata URI go on-chain.
-
-### Step 5: verify later by recomputation
-Run:
+### Step 2: verify local recomputation
 
 ```bash
 node scripts/receipt-anchor/verify-root.mjs examples/receipt-anchor/sample-receipt.json examples/receipt-anchor/sample-root.json
 ```
 
-Then compare:
-- recomputed local root
-- anchored on-chain root/event
+### Step 3: compile `ReceiptAnchor`
+
+```bash
+node scripts/receipt-anchor/compile-anchor.mjs
+```
+
+This writes:
+
+```text
+examples/receipt-anchor/ReceiptAnchor.artifact.json
+```
+
+### Step 4: deploy `ReceiptAnchor` to Sepolia
+
+```bash
+node scripts/receipt-anchor/deploy-anchor.mjs
+```
+
+If env vars are missing, the script exits safely.
+If the connected chain is not Sepolia (`11155111`), the script exits safely.
+
+### Step 5: anchor the root
+
+```bash
+node scripts/receipt-anchor/anchor-root.mjs <contractAddress> <receiptRoot> <metadataURI>
+```
+
+Example:
+
+```bash
+node scripts/receipt-anchor/anchor-root.mjs 0xYourContractAddress 0xa6eab9383ecdb7bf0aaa0469b383213bd7d58f808c79f82226f2869545c81d88 ipfs://receipt-anchor-demo/sample-receipt.json
+```
+
+The script prints:
+- `txHash`
+- `receiptRoot`
+- `metadataURI`
+- `contractAddress`
+- parsed `ReceiptAnchored` event info when available
+
+### Step 6: verify later by recomputation
+
+After anchoring, verify by:
+1. loading the receipt JSON locally
+2. recomputing `receiptRoot`
+3. comparing that root against the on-chain event/root
 
 ## Privacy boundary
 
@@ -86,23 +107,20 @@ This is not:
 - a full verifier
 - full receipt publication on-chain
 
-## Current blocker for live Sepolia tx
+## Safety notes
 
-The repo currently does **not** include a minimal Solidity compile/deploy toolchain such as:
-- `ethers` + compiled artifact path
-- `viem` + compiled artifact path
-- `solc`
-- Hardhat
-- Foundry
+- Sepolia only
+- use a throwaway testnet wallet
+- no private keys in code
+- no default RPC URL
+- no hardcoded wallet secrets
+- never commit private keys
+- never paste private keys into chat/logs
+- no on-chain full receipt data
 
-Therefore the correct status right now is:
+## Current local reference
 
-> Need minimal Solidity compile/deploy toolchain before live Sepolia tx.
-
-## Recommended next step
-
-Add the smallest possible toolchain only after approval, for example:
-- a tiny `ethers` or `viem` script lane
-- plus a minimal Solidity compile path
-
-Until then, the local off-chain E2E demo remains the reference flow.
+The local off-chain E2E demo remains the reference flow:
+- compute root locally
+- verify root locally
+- then deploy/anchor only when explicit Sepolia credentials are provided
