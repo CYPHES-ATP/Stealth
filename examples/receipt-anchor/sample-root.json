@@ -1,6 +1,9 @@
 {
   "schema": "stealth.receipt.anchor.root.v0",
-  "receiptRoot": "0x7e2d236d53716dd2c9bc0fc4b4382c3472d3f155b29a1f8360b4dc63f29b8f7b",
+  "receiptRoot": "0xa6eab9383ecdb7bf0aaa0469b383213bd7d58f808c79f82226f2869545c81d88",
+  "algorithm": "sha256",
+  "source": "examples\\receipt-anchor\\sample-receipt.json",
+  "canonicalization": "JSON with recursively sorted object keys, compact separators, array order preserved",
   "metadataURI": "ipfs://receipt-anchor-demo/sample-receipt.json",
   "notes": {
     "computed_offchain": true,
