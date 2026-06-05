@@ -1,0 +1,10 @@
+{
+  "schema": "stealth.receipt.anchor.root.v0",
+  "receiptRoot": "0x7e2d236d53716dd2c9bc0fc4b4382c3472d3f155b29a1f8360b4dc63f29b8f7b",
+  "metadataURI": "ipfs://receipt-anchor-demo/sample-receipt.json",
+  "notes": {
+    "computed_offchain": true,
+    "full_receipt_onchain": false,
+    "verification_model": "recompute root from canonical receipt JSON and compare to anchored root"
+  }
+}
