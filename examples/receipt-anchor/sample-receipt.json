@@ -1,0 +1,27 @@
+{
+  "schema": "stealth.receipt.anchor.v0",
+  "session_id": "sess_anchor_demo_001",
+  "receiptHash": "0x9d8d2f21989d75a8d847c7a37b2a6d31d6178fd7ff2c6f4fb8477dbf6fe4f101",
+  "eventRoot": "0x4b39b4fd4e857f5f8f1fb7136f8d2c637f4b6ddbcf84c6f66a3d7cc1f37f81ab",
+  "diffHash": "0xf55f8953d0fdd7a9f0e442f0b13f95ca6a54c2d887bd3242df7b0f26f5ebaa91",
+  "agent_id": "agent.stealth.local.demo",
+  "scope": {
+    "permission": "workspace-write",
+    "network": "disabled"
+  },
+  "changed_files": [
+    "src/demo.ts",
+    "README.md"
+  ],
+  "timestamp": "2026-06-05T07:00:00Z",
+  "verifier_result": {
+    "status": "OK",
+    "reason_code": "OK"
+  },
+  "signature_trust_block": {
+    "algorithm": "demo-hmac",
+    "key_id": "demo-key-001",
+    "signer_id": "agent.stealth.local.demo",
+    "trust_mode": "signature_extension"
+  }
+}
