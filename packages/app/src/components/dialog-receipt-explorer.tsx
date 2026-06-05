@@ -13,7 +13,14 @@ export function DialogReceiptExplorer(props: {
 }) {
   const dialog = useDialog()
 
-  const changedFiles = createMemo(() => props.evidence.changes?.files_changed ?? props.summary.changedFiles)
+  const changedFiles = createMemo(() => {
+    const evidenceFiles = props.evidence.changes?.files_changed
+    return evidenceFiles && evidenceFiles.length > 0 ? evidenceFiles : props.summary.changedFiles
+  })
+  const resolvedDiffHash = createMemo(() => {
+    const evidenceDiffHash = props.evidence.changes?.diff_sha256
+    return evidenceDiffHash && evidenceDiffHash.length > 0 ? evidenceDiffHash : props.summary.diffSha256 ?? "none"
+  })
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
   const permissionJson = createMemo(() => {
@@ -163,7 +170,7 @@ export function DialogReceiptExplorer(props: {
               <div class="mb-3">
                 <div class="text-11-medium text-text-base">Diff hash</div>
                 <div class="mt-1 break-all rounded border border-border-weak-base bg-surface-panel p-2 font-mono text-10-regular text-text-weak">
-                  {props.evidence.changes?.diff_sha256 ?? props.summary.diffSha256 ?? "none"}
+                  {resolvedDiffHash()}
                 </div>
               </div>
               <div>
