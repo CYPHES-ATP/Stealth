@@ -19,7 +19,7 @@
     "preview": "electron-vite preview",
     "package": "bun run build && electron-builder --config electron-builder.config.ts",
     "package:mac": "bun run build && electron-builder --mac --config electron-builder.config.ts",
-    "package:win": "bun run build && powershell -NoProfile -Command \"$env:ELECTRON_TARGET_PLATFORM='win32'; $env:ELECTRON_TARGET_ARCH='x64'; electron-builder --win --config electron-builder.config.ts\"",
+    "package:win": "bun run build && powershell -NoProfile -Command \"Set-Item Env:ELECTRON_TARGET_PLATFORM win32; Set-Item Env:ELECTRON_TARGET_ARCH x64; electron-builder --win --config electron-builder.config.ts\"",
     "package:linux": "bun run build && electron-builder --linux --config electron-builder.config.ts",
     "native:build": "bun install --cwd native"
   },
