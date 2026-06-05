@@ -1,7 +1,10 @@
 import { For, Show, createMemo } from "solid-js"
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { showToast } from "@opencode-ai/ui/toast"
+import { useLanguage } from "@/context/language"
 import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/handoff"
+import { copyText } from "@/utils/copy"
 
 function evidenceToJson(evidence: HandoffEvidence) {
   return JSON.stringify(evidence, null, 2)
@@ -12,6 +15,7 @@ export function DialogReceiptExplorer(props: {
   summary: HandoffReceiptSummary
 }) {
   const dialog = useDialog()
+  const language = useLanguage()
 
   const changedFiles = createMemo(() => {
     const evidenceFiles = props.evidence.changes?.files_changed
@@ -39,8 +43,21 @@ export function DialogReceiptExplorer(props: {
   )
 
   const copyJson = () => {
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
-    void navigator.clipboard.writeText(evidenceJson())
+    void copyText(evidenceJson())
+      .then(() => {
+        showToast({
+          variant: "success",
+          icon: "circle-check",
+          title: language.t("session.share.copy.copied"),
+          description: "Receipt JSON copied to clipboard",
+        })
+      })
+      .catch((error: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        })
+      })
   }
 
   return (

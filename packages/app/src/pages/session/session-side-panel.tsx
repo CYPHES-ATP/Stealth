@@ -23,11 +23,13 @@ import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useServerSDK } from "@/context/server-sdk"
+import { showToast } from "@opencode-ai/ui/toast"
 import { createFileTabListSync } from "@/pages/session/file-tab-scroll"
 import { FileTabContent } from "@/pages/session/file-tabs"
 import { createOpenSessionFileTab, createSessionTabs, getTabReorderIndex, type Sizing } from "@/pages/session/helpers"
 import { DialogReceiptExplorer } from "@/components/dialog-receipt-explorer"
 import { setReceiptHandoff, setSessionHandoff, type HandoffEvidence } from "@/pages/session/handoff"
+import { copyText } from "@/utils/copy"
 import { useSessionLayout } from "@/pages/session/session-layout"
 
 type RenderDiff = (SnapshotFileDiff & { file: string }) | VcsFileDiff
@@ -214,8 +216,21 @@ export function SessionSidePanel(props: {
   const copyEvidenceJson = () => {
     const value = evidenceJsonPreview()
     if (!value) return
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
-    void navigator.clipboard.writeText(value)
+    void copyText(value)
+      .then(() => {
+        showToast({
+          variant: "success",
+          icon: "circle-check",
+          title: language.t("session.share.copy.copied"),
+          description: "Receipt JSON copied to clipboard",
+        })
+      })
+      .catch((error: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        })
+      })
   }
 
   const handleDragStart = (event: unknown) => {
