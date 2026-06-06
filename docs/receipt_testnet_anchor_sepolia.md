@@ -118,6 +118,11 @@ This is not:
 - never paste private keys into chat/logs
 - no on-chain full receipt data
 
+## Demo result
+
+A successful Sepolia demo result is recorded here:
+- `docs/receipt_anchor_sepolia_demo_result.md`
+
 ## Current local reference
 
 The local off-chain E2E demo remains the reference flow:
