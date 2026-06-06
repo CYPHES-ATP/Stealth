@@ -1,0 +1,8 @@
+{
+  "schema": "stealth.receipt.merkle.manifest.v0",
+  "proofIndex": 0,
+  "receipts": [
+    "examples/receipt-anchor/sample-receipt.json",
+    "examples/receipt-anchor/sample-receipt-2.json"
+  ]
+}
