@@ -1,0 +1,34 @@
+{
+  "schema": "stealth.receipt.merkle.root.v0",
+  "manifest": "examples\\receipt-anchor\\session-manifest.json",
+  "leafCount": 2,
+  "leaves": [
+    {
+      "source": "examples\\receipt-anchor\\sample-receipt.json",
+      "receiptHash": "0xa6eab9383ecdb7bf0aaa0469b383213bd7d58f808c79f82226f2869545c81d88"
+    },
+    {
+      "source": "examples\\receipt-anchor\\sample-receipt-2.json",
+      "receiptHash": "0x4f65a1d7110869dfae0bed954ca5b53c04e6c562f17d0dc81406a18d79b5ff54"
+    }
+  ],
+  "sessionRoot": "0x4adc8d943a66e6d5f2cf14f8fcbaf8b4194440841e05508ad47e5586511a1cb4",
+  "proof": {
+    "index": 0,
+    "leaf": {
+      "source": "examples\\receipt-anchor\\sample-receipt.json",
+      "receiptHash": "0xa6eab9383ecdb7bf0aaa0469b383213bd7d58f808c79f82226f2869545c81d88"
+    },
+    "siblings": [
+      {
+        "position": "right",
+        "hash": "0x4f65a1d7110869dfae0bed954ca5b53c04e6c562f17d0dc81406a18d79b5ff54"
+      }
+    ]
+  },
+  "notes": {
+    "computed_offchain": true,
+    "onchain_model": "sessionRoot/workflowRoot only",
+    "verification_model": "recompute receiptHash, verify Merkle proof, compare with anchored sessionRoot"
+  }
+}
