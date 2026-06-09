@@ -172,7 +172,7 @@ export function SessionSidePanel(props: {
     const liveChangedFiles = diffFiles()
     const evidenceChangedFiles = evidence?.changes?.files_changed
     return {
-      schema: "stealth.session.evidence.v0" as const,
+      schema: "stealth.session.evidence.v1" as const,
       sessionID: params.id ?? sessionKey(),
       commandCount: evidence?.commands?.length ?? 0,
       changedFiles: evidenceChangedFiles?.length ? evidenceChangedFiles : liveChangedFiles,
