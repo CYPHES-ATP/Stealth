@@ -10,8 +10,25 @@ export type HandoffEvidenceCommand = {
   stdout_summary?: string
 }
 
+export type HandoffAuthorizationAction = {
+  permission: string
+  pattern: string
+  action: string
+}
+
+export type HandoffExecutionRecord = {
+  call_id: string
+  tool: string
+  action_performed: string
+  target: string
+  execution_timestamp: number
+  completed_timestamp: number
+  status: "completed" | "error"
+  scope_match: boolean | null
+}
+
 export type HandoffEvidence = {
-  schema: "stealth.session.evidence.v0"
+  schema: "stealth.session.evidence.v1"
   session_id: string
   directory: string
   task: {
@@ -25,6 +42,19 @@ export type HandoffEvidence = {
   scope: {
     permission?: unknown
   }
+  authorization: {
+    delegation_ref: string | null
+    delegator: string | null
+    agent_operator: string | null
+    target: string
+    allowed_actions: HandoffAuthorizationAction[]
+    authorization_valid_from: number | null
+    authorization_expiry: number | null
+    authorization_checked_at: number
+    authorization_state_hash: string
+    authorized_at_execution: boolean | null
+  }
+  execution: HandoffExecutionRecord[]
   commands: HandoffEvidenceCommand[]
   changes: {
     files_changed: string[]
@@ -33,12 +63,29 @@ export type HandoffEvidence = {
   metadata: {
     message_count: number
     diff_count: number
-    generated_by: "stealth.handoff.evidence.builder.v0"
+    generated_by: "stealth.handoff.evidence.builder.v1"
   }
 }
 
+const AuthorizationActionSchema = Schema.Struct({
+  permission: Schema.String,
+  pattern: Schema.String,
+  action: Schema.String,
+})
+
+const ExecutionRecordSchema = Schema.Struct({
+  call_id: Schema.String,
+  tool: Schema.String,
+  action_performed: Schema.String,
+  target: Schema.String,
+  execution_timestamp: Schema.Number,
+  completed_timestamp: Schema.Number,
+  status: Schema.Literals(["completed", "error"]),
+  scope_match: Schema.NullOr(Schema.Boolean),
+})
+
 export const HandoffEvidenceSchema = Schema.Struct({
-  schema: Schema.Literal("stealth.session.evidence.v0"),
+  schema: Schema.Literal("stealth.session.evidence.v1"),
   session_id: Schema.String,
   directory: Schema.String,
   task: Schema.Struct({
@@ -52,6 +99,19 @@ export const HandoffEvidenceSchema = Schema.Struct({
   scope: Schema.Struct({
     permission: Schema.optional(Schema.Unknown),
   }),
+  authorization: Schema.Struct({
+    delegation_ref: Schema.NullOr(Schema.String),
+    delegator: Schema.NullOr(Schema.String),
+    agent_operator: Schema.NullOr(Schema.String),
+    target: Schema.String,
+    allowed_actions: Schema.Array(AuthorizationActionSchema),
+    authorization_valid_from: Schema.NullOr(Schema.Number),
+    authorization_expiry: Schema.NullOr(Schema.Number),
+    authorization_checked_at: Schema.Number,
+    authorization_state_hash: Schema.String,
+    authorized_at_execution: Schema.NullOr(Schema.Boolean),
+  }),
+  execution: Schema.Array(ExecutionRecordSchema),
   commands: Schema.Array(
     Schema.Struct({
       command: Schema.String,
@@ -66,12 +126,30 @@ export const HandoffEvidenceSchema = Schema.Struct({
   metadata: Schema.Struct({
     message_count: Schema.Number,
     diff_count: Schema.Number,
-    generated_by: Schema.Literal("stealth.handoff.evidence.builder.v0"),
+    generated_by: Schema.Literal("stealth.handoff.evidence.builder.v1"),
   }),
 })
 
 function sha256(input: string) {
   return createHash("sha256").update(input).digest("hex")
+}
+
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value)
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(",")}]`
+  }
+
+  const record = value as Record<string, unknown>
+  const entries = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalize(record[key])}`)
+
+  return `{${entries.join(",")}}`
 }
 
 function firstUserPrompt(messages: MessageV2.WithParts[]) {
@@ -125,6 +203,41 @@ function extractCommands(messages: MessageV2.WithParts[]): HandoffEvidenceComman
   return commands
 }
 
+function extractExecution(
+  messages: MessageV2.WithParts[],
+  target: string,
+): HandoffExecutionRecord[] {
+  const records: HandoffExecutionRecord[] = []
+
+  for (const message of messages) {
+    for (const part of message.parts) {
+      if (part.type !== "tool") continue
+      if (part.state.status !== "completed" && part.state.status !== "error") continue
+
+      const input = part.state.input
+      const command =
+        typeof input?.command === "string"
+          ? input.command
+          : typeof input?.cmd === "string"
+            ? input.cmd
+            : undefined
+
+      records.push({
+        call_id: part.callID,
+        tool: part.tool,
+        action_performed: command ?? part.tool,
+        target,
+        execution_timestamp: part.state.time.start,
+        completed_timestamp: part.state.time.end,
+        status: part.state.status,
+        scope_match: null,
+      })
+    }
+  }
+
+  return records
+}
+
 export function buildHandoffEvidence(input: {
   session: Session.Info
   messages: MessageV2.WithParts[]
@@ -133,8 +246,25 @@ export function buildHandoffEvidence(input: {
   const filesChanged = [...new Set(input.diffs.map((diff) => diff.file).filter((file): file is string => !!file))]
   const diffPayload = JSON.stringify(input.diffs)
 
+  const allowedActions: HandoffAuthorizationAction[] = (input.session.permission ?? []).map((rule) => ({
+    permission: rule.permission,
+    pattern: rule.pattern,
+    action: rule.action,
+  }))
+
+  const execution = extractExecution(input.messages, input.session.directory)
+  const executionTimestamps = execution.flatMap((record) => [
+    record.execution_timestamp,
+    record.completed_timestamp,
+  ])
+
+  const authorizationCheckedAt = Math.max(
+    input.session.time.updated,
+    ...executionTimestamps,
+  )
+
   return {
-    schema: "stealth.session.evidence.v0",
+    schema: "stealth.session.evidence.v1",
     session_id: input.session.id,
     directory: input.session.directory,
     task: {
@@ -148,6 +278,19 @@ export function buildHandoffEvidence(input: {
     scope: {
       permission: input.session.permission,
     },
+    authorization: {
+      delegation_ref: null,
+      delegator: null,
+      agent_operator: input.session.agent ?? null,
+      target: input.session.directory,
+      allowed_actions: allowedActions,
+      authorization_valid_from: null,
+      authorization_expiry: null,
+      authorization_checked_at: authorizationCheckedAt,
+      authorization_state_hash: sha256(canonicalize(allowedActions)),
+      authorized_at_execution: null,
+    },
+    execution,
     commands: extractCommands(input.messages),
     changes: {
       files_changed: filesChanged,
@@ -156,7 +299,7 @@ export function buildHandoffEvidence(input: {
     metadata: {
       message_count: input.messages.length,
       diff_count: input.diffs.length,
-      generated_by: "stealth.handoff.evidence.builder.v0",
+      generated_by: "stealth.handoff.evidence.builder.v1",
     },
   }
 }

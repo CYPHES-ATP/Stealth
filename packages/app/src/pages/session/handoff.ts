@@ -6,7 +6,7 @@ type HandoffSession = {
 }
 
 export type HandoffReceiptSummary = {
-  schema: "stealth.session.evidence.v0"
+  schema: "stealth.session.evidence.v1"
   sessionID: string
   commandCount: number
   changedFiles: string[]
@@ -21,13 +21,43 @@ export type HandoffEvidenceCommand = {
   stdout_summary?: string
 }
 
+export type HandoffAuthorizationAction = {
+  permission?: string
+  pattern?: string
+  action?: string
+}
+
+export type HandoffExecutionRecord = {
+  call_id?: string
+  tool?: string
+  action_performed?: string
+  target?: string
+  execution_timestamp?: number
+  completed_timestamp?: number
+  status?: "completed" | "error"
+  scope_match?: boolean | null
+}
+
 export type HandoffEvidence = {
-  schema?: string
+  schema?: "stealth.session.evidence.v0" | "stealth.session.evidence.v1"
   session_id?: string
   directory?: string
   task?: { title?: string; prompt?: string }
   agent?: { id?: string; runtime?: string; model?: string }
   scope?: { permission?: unknown }
+  authorization?: {
+    delegation_ref?: string | null
+    delegator?: string | null
+    agent_operator?: string | null
+    target?: string
+    allowed_actions?: HandoffAuthorizationAction[]
+    authorization_valid_from?: number | null
+    authorization_expiry?: number | null
+    authorization_checked_at?: number
+    authorization_state_hash?: string
+    authorized_at_execution?: boolean | null
+  }
+  execution?: HandoffExecutionRecord[]
   commands?: HandoffEvidenceCommand[]
   changes?: { files_changed?: string[]; diff_sha256?: string | null }
   metadata?: { message_count?: number; diff_count?: number; generated_by?: string }

@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stealth.cyphes.com/schemas/handoff-evidence.v1.schema.json",
+  "title": "Stealth Handoff Evidence v1",
+  "description": "Stealth session handoff evidence with execution records and an authorization snapshot.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "session_id",
+    "directory",
+    "task",
+    "agent",
+    "scope",
+    "authorization",
+    "execution",
+    "commands",
+    "changes",
+    "metadata"
+  ],
+  "properties": {
+    "schema": {
+      "const": "stealth.session.evidence.v1"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "directory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "runtime": {
+          "const": "Stealth"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "permission": {}
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delegation_ref",
+        "delegator",
+        "agent_operator",
+        "target",
+        "allowed_actions",
+        "authorization_valid_from",
+        "authorization_expiry",
+        "authorization_checked_at",
+        "authorization_state_hash",
+        "authorized_at_execution"
+      ],
+      "properties": {
+        "delegation_ref": {
+          "type": ["string", "null"]
+        },
+        "delegator": {
+          "type": ["string", "null"]
+        },
+        "agent_operator": {
+          "type": ["string", "null"]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowed_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["permission", "pattern", "action"],
+            "properties": {
+              "permission": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "authorization_valid_from": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "authorization_expiry": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "authorization_checked_at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "authorization_state_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "authorized_at_execution": {
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "execution": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "call_id",
+          "tool",
+          "action_performed",
+          "target",
+          "execution_timestamp",
+          "completed_timestamp",
+          "status",
+          "scope_match"
+        ],
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tool": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action_performed": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "execution_timestamp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "completed_timestamp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "status": {
+            "enum": ["completed", "error"]
+          },
+          "scope_match": {
+            "type": ["boolean", "null"]
+          }
+        }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command"],
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "exit_code": {
+            "type": "number"
+          },
+          "stdout_summary": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_changed", "diff_sha256"],
+      "properties": {
+        "files_changed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diff_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message_count", "diff_count", "generated_by"],
+      "properties": {
+        "message_count": {
+          "type": "number",
+          "minimum": 0
+        },
+        "diff_count": {
+          "type": "number",
+          "minimum": 0
+        },
+        "generated_by": {
+          "const": "stealth.handoff.evidence.builder.v1"
+        }
+      }
+    }
+  }
+}
