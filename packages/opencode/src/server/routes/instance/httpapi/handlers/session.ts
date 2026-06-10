@@ -2,6 +2,7 @@ import { Agent } from "@/agent/agent"
 import { Bus } from "@/bus"
 import { Command } from "@/command"
 import { Permission } from "@/permission"
+import { Vcs } from "@/project/vcs"
 import { PermissionID } from "@/permission/schema"
 import { SessionShare } from "@/share/session"
 import { Session } from "@/session/session"
@@ -57,6 +58,7 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
     const statusSvc = yield* SessionStatus.Service
     const todoSvc = yield* Todo.Service
     const summary = yield* SessionSummary.Service
+    const vcs = yield* Vcs.Service
     const bus = yield* Bus.Service
     const scope = yield* Scope.Scope
 
@@ -104,7 +106,11 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
     const handoff = Effect.fn("SessionHttpApi.handoff")(function* (ctx: { params: { sessionID: SessionID } }) {
       const current = yield* requireSession(ctx.params.sessionID)
       const messages = yield* SessionError.mapStorageNotFound(session.messages({ sessionID: ctx.params.sessionID }))
-      const diffs = yield* summary.diff({ sessionID: ctx.params.sessionID })
+      const storedDiffs = yield* summary.diff({ sessionID: ctx.params.sessionID })
+      const liveDiffs = storedDiffs.length
+        ? []
+        : yield* vcs.status().pipe(Effect.catch(() => Effect.succeed([])))
+      const diffs = storedDiffs.length ? storedDiffs : liveDiffs
       return buildHandoffEvidence({ session: current, messages, diffs })
     })
 
