@@ -5,7 +5,7 @@ import type { MessageV2 } from "@/session/message-v2"
 import type { Session } from "@/session/session"
 import type { Snapshot } from "@/snapshot"
 
-function session(permission = [
+function session(permission: unknown = [
   {
     permission: "bash",
     pattern: "git diff -- README.md",
@@ -174,6 +174,28 @@ describe("buildHandoffEvidence v1", () => {
           status: "modified",
         } as Snapshot.FileDiff,
       ],
+    })
+
+    const withoutAnchor = stripAnchor(evidence)
+    const recomputed = "0x" + sha256(canonicalize(withoutAnchor))
+
+    expect(evidence.anchor.receipt_root).toBe(recomputed)
+  })
+
+  test("uses explicit null for scope.permission when permission is absent", () => {
+    const noPermissionSession = {
+      ...session(),
+      permission: undefined,
+    } as unknown as Session.Info
+
+    const evidence = buildHandoffEvidence({
+      session: noPermissionSession,
+      messages: messages(),
+      diffs: [],
+    })
+
+    expect(evidence.scope).toEqual({
+      permission: null,
     })
 
     const withoutAnchor = stripAnchor(evidence)
