@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto"
 import { describe, expect, test } from "bun:test"
 import { buildHandoffEvidence } from "@/session/handoff/evidence"
 import type { MessageV2 } from "@/session/message-v2"
 import type { Session } from "@/session/session"
+import type { Snapshot } from "@/snapshot"
 
 function session(permission = [
   {
@@ -21,6 +23,34 @@ function session(permission = [
       updated: 1_781_000_003_000,
     },
   } as unknown as Session.Info
+}
+
+function sha256(input: string) {
+  return createHash("sha256").update(input).digest("hex")
+}
+
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value)
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(",")}]`
+  }
+
+  const record = value as Record<string, unknown>
+  const entries = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalize(record[key])}`)
+
+  return `{${entries.join(",")}}`
+}
+
+function stripAnchor<T extends { anchor?: unknown }>(value: T): Omit<T, "anchor"> {
+  const clone = { ...value } as Record<string, unknown>
+  delete clone.anchor
+  return clone as Omit<T, "anchor">
 }
 
 function messages() {
@@ -130,5 +160,25 @@ describe("buildHandoffEvidence v1", () => {
     expect(changed.authorization.authorization_state_hash).not.toBe(
       first.authorization.authorization_state_hash,
     )
+  })
+
+  test("self-verifies receipt_root against full evidence json without anchor", () => {
+    const evidence = buildHandoffEvidence({
+      session: session(),
+      messages: messages(),
+      diffs: [
+        {
+          file: "apps/contracts/anchor-root-encoded-test.txt",
+          additions: 1,
+          deletions: 0,
+          status: "modified",
+        } as Snapshot.FileDiff,
+      ],
+    })
+
+    const withoutAnchor = stripAnchor(evidence)
+    const recomputed = "0x" + sha256(canonicalize(withoutAnchor))
+
+    expect(evidence.anchor.receipt_root).toBe(recomputed)
   })
 })

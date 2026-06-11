@@ -156,6 +156,12 @@ function sha256(input: string) {
   return createHash("sha256").update(input).digest("hex")
 }
 
+function stripAnchor<T extends { anchor?: unknown }>(value: T): Omit<T, "anchor"> {
+  const clone = { ...value } as Record<string, unknown>
+  delete clone.anchor
+  return clone as Omit<T, "anchor">
+}
+
 function canonicalize(value: unknown): string {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value)
@@ -260,6 +266,14 @@ function extractExecution(
   return records
 }
 
+function computeReceiptRoot(value: Omit<HandoffEvidence, "anchor">): string {
+  return "0x" + sha256(canonicalize(value))
+}
+
+function encodeHandoffEvidence(value: HandoffEvidence): HandoffEvidence {
+  return Schema.encodeSync(HandoffEvidenceSchema)(value) as HandoffEvidence
+}
+
 export function buildHandoffEvidence(input: {
   session: Session.Info
   messages: MessageV2.WithParts[]
@@ -337,18 +351,27 @@ export function buildHandoffEvidence(input: {
     verifier_status: "not verified",
   }
 
-  const encodedEvidenceForRoot = Schema.encodeSync(HandoffEvidenceSchema)({
+  const encodedEvidenceForRoot = encodeHandoffEvidence({
     ...baseEvidence,
     anchor: anchorTemplate,
   })
-  const rootEvidence = { ...encodedEvidenceForRoot } as Record<string, unknown>
-  delete rootEvidence.anchor
 
-  return {
+  const receiptRoot = computeReceiptRoot(stripAnchor(encodedEvidenceForRoot))
+
+  const finalEvidence = encodeHandoffEvidence({
     ...baseEvidence,
     anchor: {
       ...anchorTemplate,
-      receipt_root: "0x" + sha256(canonicalize(rootEvidence)),
+      receipt_root: receiptRoot,
     },
+  })
+
+  const selfVerifiedRoot = computeReceiptRoot(stripAnchor(finalEvidence))
+  if (selfVerifiedRoot !== finalEvidence.anchor.receipt_root) {
+    throw new Error(
+      `handoff evidence anchor root mismatch: expected ${finalEvidence.anchor.receipt_root}, got ${selfVerifiedRoot}`,
+    )
   }
+
+  return finalEvidence
 }
