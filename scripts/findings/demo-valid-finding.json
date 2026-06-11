@@ -1,0 +1,11 @@
+{
+  "claim": "Unchecked external call can lock funds in the payout path.",
+  "evidence_root": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "affected_scope": [
+    "apps/contracts/Payout.sol",
+    "apps/contracts/test/Payout.t.sol"
+  ],
+  "reproducible_condition": "Run the payout path with a reverting receiver contract to reproduce the lock condition.",
+  "severity_rationale": "Funds can become permanently unavailable in a core payout flow.",
+  "severity": "high"
+}
