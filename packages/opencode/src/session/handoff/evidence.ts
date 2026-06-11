@@ -327,16 +327,28 @@ export function buildHandoffEvidence(input: {
     },
   }
 
+  const anchorTemplate: HandoffAnchorProof = {
+    receipt_root: "0x",
+    merkle_proof_status: "not attached",
+    onchain_anchor_status: "not anchored",
+    network: "local/off-chain",
+    contract: null,
+    tx_hash: null,
+    verifier_status: "not verified",
+  }
+
+  const encodedEvidenceForRoot = Schema.encodeSync(HandoffEvidenceSchema)({
+    ...baseEvidence,
+    anchor: anchorTemplate,
+  })
+  const rootEvidence = { ...encodedEvidenceForRoot } as Record<string, unknown>
+  delete rootEvidence.anchor
+
   return {
     ...baseEvidence,
     anchor: {
-      receipt_root: `0x${sha256(canonicalize(JSON.parse(JSON.stringify(baseEvidence))))}`,
-      merkle_proof_status: "not attached",
-      onchain_anchor_status: "not anchored",
-      network: "local/off-chain",
-      contract: null,
-      tx_hash: null,
-      verifier_status: "not verified",
+      ...anchorTemplate,
+      receipt_root: "0x" + sha256(canonicalize(rootEvidence)),
     },
   }
 }
