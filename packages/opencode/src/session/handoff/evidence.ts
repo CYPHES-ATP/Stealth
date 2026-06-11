@@ -330,7 +330,7 @@ export function buildHandoffEvidence(input: {
   return {
     ...baseEvidence,
     anchor: {
-      receipt_root: `0x${sha256(canonicalize(baseEvidence))}`,
+      receipt_root: `0x${sha256(canonicalize(JSON.parse(JSON.stringify(baseEvidence))))}`,
       merkle_proof_status: "not attached",
       onchain_anchor_status: "not anchored",
       network: "local/off-chain",
