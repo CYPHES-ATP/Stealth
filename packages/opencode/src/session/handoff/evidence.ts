@@ -50,7 +50,7 @@ export type HandoffEvidence = {
     runtime: "Stealth"
   }
   scope: {
-    permission?: unknown
+    permission: unknown | null
   }
   authorization: {
     delegation_ref: string | null
@@ -118,7 +118,7 @@ export const HandoffEvidenceSchema = Schema.Struct({
     runtime: Schema.Literal("Stealth"),
   }),
   scope: Schema.Struct({
-    permission: Schema.optional(Schema.Unknown),
+    permission: Schema.NullOr(Schema.Unknown),
   }),
   authorization: Schema.Struct({
     delegation_ref: Schema.NullOr(Schema.String),
@@ -314,7 +314,7 @@ export function buildHandoffEvidence(input: {
       runtime: "Stealth",
     },
     scope: {
-      permission: input.session.permission,
+      permission: input.session.permission ?? null,
     },
     authorization: {
       delegation_ref: null,
