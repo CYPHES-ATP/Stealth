@@ -6,6 +6,20 @@ import { useLanguage } from "@/context/language"
 import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/handoff"
 import { copyText } from "@/utils/copy"
 
+type AnchorProofEvidence = HandoffEvidence & {
+  anchor?: {
+    receipt_root?: string | null
+    merkle_proof_status?: string | null
+    onchain_anchor_status?: string | null
+    network?: string | null
+    contract?: string | null
+    tx_hash?: string | null
+    verifier_status?: string | null
+    proof_json?: unknown
+  }
+  proof?: AnchorProofEvidence["anchor"]
+}
+
 function evidenceToJson(evidence: HandoffEvidence) {
   return JSON.stringify(evidence, null, 2)
 }
@@ -25,6 +39,17 @@ export function DialogReceiptExplorer(props: {
     const evidenceDiffHash = props.evidence.changes?.diff_sha256
     return evidenceDiffHash && evidenceDiffHash.length > 0 ? evidenceDiffHash : props.summary.diffSha256 ?? "none"
   })
+  const anchorProof = createMemo(() => {
+    const evidence = props.evidence as AnchorProofEvidence
+    return evidence.anchor ?? evidence.proof
+  })
+  const receiptRoot = createMemo(() => anchorProof()?.receipt_root ?? resolvedDiffHash())
+  const merkleProofStatus = createMemo(() => anchorProof()?.merkle_proof_status ?? "not attached")
+  const onchainAnchorStatus = createMemo(() => anchorProof()?.onchain_anchor_status ?? "not attached")
+  const anchorNetwork = createMemo(() => anchorProof()?.network ?? "unknown")
+  const anchorContract = createMemo(() => anchorProof()?.contract ?? "not attached")
+  const anchorTxHash = createMemo(() => anchorProof()?.tx_hash ?? "not attached")
+  const anchorVerifierStatus = createMemo(() => anchorProof()?.verifier_status ?? props.summary.verifierStatus ?? "not verified")
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
   const permissionJson = createMemo(() => {
@@ -205,6 +230,28 @@ export function DialogReceiptExplorer(props: {
               </div>
             </div>
 
+            <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+              <div class="mb-2 text-12-semibold text-text-base">Receipt Anchor Proof Path</div>
+              <div class="mb-3 text-10-regular text-text-weak">
+                Execution receipt &rarr; Merkle proof &rarr; on-chain anchor
+              </div>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-11-regular text-text-weak">
+                <span>receipt root</span>
+                <span class="break-all font-mono">{receiptRoot()}</span>
+                <span>Merkle proof</span>
+                <span>{merkleProofStatus()}</span>
+                <span>on-chain anchor</span>
+                <span>{onchainAnchorStatus()}</span>
+                <span>network</span>
+                <span>{anchorNetwork()}</span>
+                <span>contract</span>
+                <span class="break-all font-mono">{anchorContract()}</span>
+                <span>tx</span>
+                <span class="break-all font-mono">{anchorTxHash()}</span>
+                <span>verifier</span>
+                <span>{anchorVerifierStatus()}</span>
+              </div>
+            </div>
             <div class="rounded-md border border-border-weak-base bg-background-base p-3">
               <div class="mb-2 text-12-semibold text-text-base">Command summary</div>
               <div class="max-h-56 space-y-2 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2">
