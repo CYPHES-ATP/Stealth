@@ -293,6 +293,13 @@ export function DialogReceiptExplorer(props: {
                 <span>verifier</span>
                 <span>{anchorVerifierStatus()}</span>
               </div>
+
+              <div class="mt-3">
+                <div class="mb-1 text-11-medium text-text-base">Copy payload preview</div>
+                <pre class="max-h-40 overflow-auto rounded border border-border-weak-base bg-surface-panel p-2 font-mono text-10-regular text-text-weak">
+                  {anchorProofJson()}
+                </pre>
+              </div>
             </div>
             <div class="rounded-md border border-border-weak-base bg-background-base p-3">
               <div class="mb-2 text-12-semibold text-text-base">Command summary</div>
