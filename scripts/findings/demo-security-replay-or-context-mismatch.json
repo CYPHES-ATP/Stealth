@@ -1,0 +1,14 @@
+{
+  "name": "replay-or-context-mismatch",
+  "claim": "Unchecked external call can lock funds in the payout path.",
+  "session_id": "ses_demo_wrong",
+  "expected_session_id": "ses_demo_expected",
+  "evidence_root": "0x5555555555555555555555555555555555555555555555555555555555555555",
+  "expected_evidence_root": "0x5555555555555555555555555555555555555555555555555555555555555555",
+  "affected_scope": [
+    "apps/contracts/Payout.sol"
+  ],
+  "reproducible_condition": "Run the payout path with a reverting receiver contract.",
+  "severity_rationale": "Funds can become permanently unavailable in a core payout flow.",
+  "severity": "high"
+}

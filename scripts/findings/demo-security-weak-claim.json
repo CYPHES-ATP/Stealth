@@ -1,0 +1,14 @@
+{
+  "name": "weak-ai-claim",
+  "claim": "AI found a bug that might be vulnerable.",
+  "session_id": "ses_demo_weak",
+  "expected_session_id": "ses_demo_weak",
+  "evidence_root": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "expected_evidence_root": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "affected_scope": [
+    "apps/contracts/Payout.sol"
+  ],
+  "reproducible_condition": "Run the payout path with a reverting receiver contract.",
+  "severity_rationale": "Funds can become permanently unavailable in a core payout flow.",
+  "severity": "high"
+}
