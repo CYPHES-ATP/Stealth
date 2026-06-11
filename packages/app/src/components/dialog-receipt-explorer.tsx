@@ -50,6 +50,21 @@ export function DialogReceiptExplorer(props: {
   const anchorContract = createMemo(() => anchorProof()?.contract ?? "not attached")
   const anchorTxHash = createMemo(() => anchorProof()?.tx_hash ?? "not attached")
   const anchorVerifierStatus = createMemo(() => anchorProof()?.verifier_status ?? props.summary.verifierStatus ?? "not verified")
+  const anchorProofJson = createMemo(() =>
+    JSON.stringify(
+      {
+        receipt_root: receiptRoot(),
+        merkle_proof_status: merkleProofStatus(),
+        onchain_anchor_status: onchainAnchorStatus(),
+        network: anchorNetwork(),
+        contract: anchorContract(),
+        tx_hash: anchorTxHash(),
+        verifier_status: anchorVerifierStatus(),
+      },
+      null,
+      2,
+    ),
+  )
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
   const permissionJson = createMemo(() => {
@@ -66,6 +81,24 @@ export function DialogReceiptExplorer(props: {
       ? "within captured scope"
       : "scope not fully specified",
   )
+
+  const copyAnchorProofJson = () => {
+    void copyText(anchorProofJson())
+      .then(() => {
+        showToast({
+          variant: "success",
+          icon: "circle-check",
+          title: language.t("session.share.copy.copied"),
+          description: "Receipt anchor proof path copied to clipboard",
+        })
+      })
+      .catch((error: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        })
+      })
+  }
 
   const copyJson = () => {
     void copyText(evidenceJson())
@@ -231,7 +264,16 @@ export function DialogReceiptExplorer(props: {
             </div>
 
             <div class="rounded-md border border-border-weak-base bg-background-base p-3">
-              <div class="mb-2 text-12-semibold text-text-base">Receipt Anchor Proof Path</div>
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="text-12-semibold text-text-base">Receipt Anchor Proof Path</div>
+                <button
+                  type="button"
+                  class="rounded border border-border-weak-base px-2 py-1 text-10-regular text-text-weak hover:text-text-base"
+                  onClick={copyAnchorProofJson}
+                >
+                  Copy proof path
+                </button>
+              </div>
               <div class="mb-3 text-10-regular text-text-weak">
                 Execution receipt &rarr; Merkle proof &rarr; on-chain anchor
               </div>
