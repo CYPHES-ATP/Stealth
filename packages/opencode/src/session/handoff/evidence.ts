@@ -27,6 +27,16 @@ export type HandoffExecutionRecord = {
   scope_match: boolean | null
 }
 
+export type HandoffAnchorProof = {
+  receipt_root: string
+  merkle_proof_status: "not attached"
+  onchain_anchor_status: "not anchored"
+  network: "local/off-chain"
+  contract: string | null
+  tx_hash: string | null
+  verifier_status: "not verified"
+}
+
 export type HandoffEvidence = {
   schema: "stealth.session.evidence.v1"
   session_id: string
@@ -60,6 +70,7 @@ export type HandoffEvidence = {
     files_changed: string[]
     diff_sha256: string | null
   }
+  anchor: HandoffAnchorProof
   metadata: {
     message_count: number
     diff_count: number
@@ -82,6 +93,16 @@ const ExecutionRecordSchema = Schema.Struct({
   completed_timestamp: Schema.Number,
   status: Schema.Literals(["completed", "error"]),
   scope_match: Schema.NullOr(Schema.Boolean),
+})
+
+const AnchorProofSchema = Schema.Struct({
+  receipt_root: Schema.String,
+  merkle_proof_status: Schema.Literal("not attached"),
+  onchain_anchor_status: Schema.Literal("not anchored"),
+  network: Schema.Literal("local/off-chain"),
+  contract: Schema.NullOr(Schema.String),
+  tx_hash: Schema.NullOr(Schema.String),
+  verifier_status: Schema.Literal("not verified"),
 })
 
 export const HandoffEvidenceSchema = Schema.Struct({
@@ -123,6 +144,7 @@ export const HandoffEvidenceSchema = Schema.Struct({
     files_changed: Schema.Array(Schema.String),
     diff_sha256: Schema.NullOr(Schema.String),
   }),
+  anchor: AnchorProofSchema,
   metadata: Schema.Struct({
     message_count: Schema.Number,
     diff_count: Schema.Number,
@@ -263,7 +285,9 @@ export function buildHandoffEvidence(input: {
     ...executionTimestamps,
   )
 
-  return {
+  const diffSha256 = input.diffs.length ? sha256(diffPayload) : null
+
+  const baseEvidence: Omit<HandoffEvidence, "anchor"> = {
     schema: "stealth.session.evidence.v1",
     session_id: input.session.id,
     directory: input.session.directory,
@@ -294,12 +318,25 @@ export function buildHandoffEvidence(input: {
     commands: extractCommands(input.messages),
     changes: {
       files_changed: filesChanged,
-      diff_sha256: input.diffs.length ? sha256(diffPayload) : null,
+      diff_sha256: diffSha256,
     },
     metadata: {
       message_count: input.messages.length,
       diff_count: input.diffs.length,
       generated_by: "stealth.handoff.evidence.builder.v1",
+    },
+  }
+
+  return {
+    ...baseEvidence,
+    anchor: {
+      receipt_root: `0x${sha256(canonicalize(baseEvidence))}`,
+      merkle_proof_status: "not attached",
+      onchain_anchor_status: "not anchored",
+      network: "local/off-chain",
+      contract: null,
+      tx_hash: null,
+      verifier_status: "not verified",
     },
   }
 }
