@@ -203,4 +203,28 @@ describe("buildHandoffEvidence v1", () => {
 
     expect(evidence.anchor.receipt_root).toBe(recomputed)
   })
+  test("defaults Merkle proof metadata to not attached", () => {
+    const evidence = buildHandoffEvidence({
+      session: session(),
+      messages: messages(),
+      diffs: [],
+    })
+
+    expect(evidence.anchor).toMatchObject({
+      merkle_proof_status: "not attached",
+      merkle_root: null,
+      merkle_leaf_index: null,
+      merkle_proof: [],
+      onchain_anchor_status: "not anchored",
+      network: "local/off-chain",
+      contract: null,
+      tx_hash: null,
+      verifier_status: "not verified",
+    })
+
+    const withoutAnchor = stripAnchor(evidence)
+    const recomputed = "0x" + sha256(canonicalize(withoutAnchor))
+
+    expect(evidence.anchor.receipt_root).toBe(recomputed)
+  })
 })

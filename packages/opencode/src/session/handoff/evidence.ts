@@ -29,7 +29,10 @@ export type HandoffExecutionRecord = {
 
 export type HandoffAnchorProof = {
   receipt_root: string
-  merkle_proof_status: "not attached"
+  merkle_proof_status: "not attached" | "attached"
+  merkle_root: string | null
+  merkle_leaf_index: number | null
+  merkle_proof: string[]
   onchain_anchor_status: "not anchored"
   network: "local/off-chain"
   contract: string | null
@@ -97,7 +100,10 @@ const ExecutionRecordSchema = Schema.Struct({
 
 const AnchorProofSchema = Schema.Struct({
   receipt_root: Schema.String,
-  merkle_proof_status: Schema.Literal("not attached"),
+  merkle_proof_status: Schema.Union([Schema.Literal("not attached"), Schema.Literal("attached")]),
+  merkle_root: Schema.NullOr(Schema.String),
+  merkle_leaf_index: Schema.NullOr(Schema.Number),
+  merkle_proof: Schema.Array(Schema.String),
   onchain_anchor_status: Schema.Literal("not anchored"),
   network: Schema.Literal("local/off-chain"),
   contract: Schema.NullOr(Schema.String),
@@ -344,6 +350,9 @@ export function buildHandoffEvidence(input: {
   const anchorTemplate: HandoffAnchorProof = {
     receipt_root: "0x",
     merkle_proof_status: "not attached",
+    merkle_root: null,
+    merkle_leaf_index: null,
+    merkle_proof: [],
     onchain_anchor_status: "not anchored",
     network: "local/off-chain",
     contract: null,
