@@ -375,7 +375,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       if (created) {
         seed(sessionDirectory, created)
         session = created
-        if (shouldAutoAccept) permission.enableAutoAccept(session.id, sessionDirectory)
+        if (shouldAutoAccept) {
+          permission.enableAutoAccept(session.id, sessionDirectory)
+          await client.session.update({
+            sessionID: session.id,
+            permission: [{ permission: "*", pattern: "*", action: "allow" }],
+          })
+        }
         local.session.promote(sessionDirectory, session.id)
         layout.handoff.setTabs(base64Encode(sessionDirectory), session.id)
         navigate(`/${base64Encode(sessionDirectory)}/session/${session.id}`)
