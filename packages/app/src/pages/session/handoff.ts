@@ -44,7 +44,18 @@ export type HandoffEvidence = {
   directory?: string
   task?: { title?: string; prompt?: string }
   agent?: { id?: string; runtime?: string; model?: string }
-  scope?: { permission?: unknown }
+  scope?: {
+    permission?: unknown
+    lease?: {
+      id?: string
+      mode?: string
+      target?: string
+      allowed_actions?: HandoffAuthorizationAction[]
+      issued_at?: number | null
+      expires_at?: number | null
+      status?: string
+    }
+  }
   authorization?: {
     delegation_ref?: string | null
     delegator?: string | null

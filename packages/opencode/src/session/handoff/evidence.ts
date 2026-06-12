@@ -54,6 +54,15 @@ export type HandoffEvidence = {
   }
   scope: {
     permission: unknown | null
+    lease?: {
+      id: string
+      mode: "read_only" | "edit" | "execute"
+      target: string
+      allowed_actions: HandoffAuthorizationAction[]
+      issued_at: number | null
+      expires_at: number | null
+      status: "active" | "missing" | "expired"
+    }
   }
   authorization: {
     delegation_ref: string | null
@@ -125,6 +134,15 @@ export const HandoffEvidenceSchema = Schema.Struct({
   }),
   scope: Schema.Struct({
     permission: Schema.NullOr(Schema.Unknown),
+    lease: Schema.optional(Schema.Struct({
+      id: Schema.String,
+      mode: Schema.Union([Schema.Literal("read_only"), Schema.Literal("edit"), Schema.Literal("execute")]),
+      target: Schema.String,
+      allowed_actions: Schema.Array(AuthorizationActionSchema),
+      issued_at: Schema.NullOr(Schema.Number),
+      expires_at: Schema.NullOr(Schema.Number),
+      status: Schema.Union([Schema.Literal("active"), Schema.Literal("missing"), Schema.Literal("expired")]),
+    })),
   }),
   authorization: Schema.Struct({
     delegation_ref: Schema.NullOr(Schema.String),
@@ -294,6 +312,17 @@ export function buildHandoffEvidence(input: {
     action: rule.action,
   }))
 
+  const leaseStatus = allowedActions.length > 0 ? "active" as const : "missing" as const
+  const scopedLease = {
+    id: `${input.session.id}:scoped-lease:v1`,
+    mode: "read_only" as const,
+    target: input.session.directory,
+    allowed_actions: allowedActions,
+    issued_at: input.session.time.created ?? null,
+    expires_at: null,
+    status: leaseStatus,
+  }
+
   const execution = extractExecution(input.messages, input.session.directory)
   const executionTimestamps = execution.flatMap((record) => [
     record.execution_timestamp,
@@ -321,6 +350,7 @@ export function buildHandoffEvidence(input: {
     },
     scope: {
       permission: input.session.permission ?? null,
+      lease: scopedLease,
     },
     authorization: {
       delegation_ref: null,

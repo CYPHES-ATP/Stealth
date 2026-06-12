@@ -67,6 +67,7 @@ export function DialogReceiptExplorer(props: {
   )
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
+  const scopedLease = createMemo(() => props.evidence.scope?.lease)
   const permissionJson = createMemo(() => {
     const permission = props.evidence.scope?.permission
     if (permission === undefined || permission === null) return null
@@ -208,6 +209,17 @@ export function DialogReceiptExplorer(props: {
                   {scopeStatus() === "within captured scope"
                     ? "Scope data is present in captured evidence."
                     : "Scope evidence is missing or incomplete, so authority boundaries are not fully specified here."}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="text-11-medium text-text-base">Scoped lease</div>
+                <div class="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 rounded border border-border-weak-base bg-surface-panel p-2 text-10-regular text-text-weak">
+                  <span>status: {scopedLease()?.status ?? "missing"}</span>
+                  <span>mode: {scopedLease()?.mode ?? "unknown"}</span>
+                  <span class="col-span-2 truncate">target: {scopedLease()?.target ?? props.evidence.directory ?? "unknown"}</span>
+                  <span>allowed actions: {scopedLease()?.allowed_actions?.length ?? 0}</span>
+                  <span>expires: {scopedLease()?.expires_at ?? "none"}</span>
                 </div>
               </div>
 
