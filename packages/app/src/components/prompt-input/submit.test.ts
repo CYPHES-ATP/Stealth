@@ -5,6 +5,7 @@ let createPromptSubmit: typeof import("./submit").createPromptSubmit
 
 const createdClients: string[] = []
 const createdSessions: string[] = []
+const createdSessionPayloads: Array<{ directory: string; payload: unknown }> = []
 const enabledAutoAccept: Array<{ sessionID: string; directory: string }> = []
 const optimistic: Array<{
   directory?: string
@@ -31,8 +32,9 @@ const clientFor = (directory: string) => {
   createdClients.push(directory)
   return {
     session: {
-      create: async () => {
+      create: async (payload?: unknown) => {
         createdSessions.push(directory)
+        createdSessionPayloads.push({ directory, payload })
         return {
           data: {
             id: `session-${createdSessions.length}`,
@@ -204,6 +206,7 @@ beforeAll(async () => {
 beforeEach(() => {
   createdClients.length = 0
   createdSessions.length = 0
+  createdSessionPayloads.length = 0
   enabledAutoAccept.length = 0
   optimistic.length = 0
   optimisticSeeded.length = 0
@@ -278,6 +281,14 @@ describe("prompt submit worktree selection", () => {
 
     await submit.handleSubmit(event)
 
+    expect(createdSessionPayloads).toEqual([
+      {
+        directory: "/repo/worktree-a",
+        payload: {
+          permission: [{ permission: "*", pattern: "*", action: "allow" }],
+        },
+      },
+    ])
     expect(enabledAutoAccept).toEqual([{ sessionID: "session-1", directory: "/repo/worktree-a" }])
   })
 
