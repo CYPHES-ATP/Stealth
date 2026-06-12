@@ -362,8 +362,11 @@ export function createPromptSubmit(input: PromptSubmitInput) {
 
     let session = input.info()
     if (!session && isNewSession) {
+      const autoAcceptPermission = [{ permission: "*", pattern: "*", action: "allow" }] as const
       const created = await client.session
-        .create()
+        .create({
+          ...(shouldAutoAccept ? { permission: [...autoAcceptPermission] } : {}),
+        })
         .then((x) => x.data ?? undefined)
         .catch((err) => {
           showToast({
@@ -377,10 +380,6 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         session = created
         if (shouldAutoAccept) {
           permission.enableAutoAccept(session.id, sessionDirectory)
-          await client.session.update({
-            sessionID: session.id,
-            permission: [{ permission: "*", pattern: "*", action: "allow" }],
-          })
         }
         local.session.promote(sessionDirectory, session.id)
         layout.handoff.setTabs(base64Encode(sessionDirectory), session.id)
