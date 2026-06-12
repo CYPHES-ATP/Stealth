@@ -14,6 +14,7 @@ import { usePermission } from "@/context/permission"
 import { usePlatform, type DisplayBackend } from "@/context/platform"
 import { useServerSync } from "@/context/server-sync"
 import { useServerSDK } from "@/context/server-sdk"
+import { useSDK } from "@/context/sdk"
 import {
   monoDefault,
   monoFontFamily,
@@ -87,6 +88,7 @@ export const SettingsGeneral: Component = () => {
   const permission = usePermission()
   const platform = usePlatform()
   const params = useParams()
+  const sdk = useSDK()
   const settings = useSettings()
 
   const [store, setStore] = createStore({
@@ -94,7 +96,7 @@ export const SettingsGeneral: Component = () => {
   })
 
   const linux = createMemo(() => platform.platform === "desktop" && platform.os === "linux")
-  const dir = createMemo(() => decode64(params.dir))
+  const dir = createMemo(() => decode64(params.dir) || sdk.directory)
   const accepting = createMemo(() => {
     const value = dir()
     if (!value) return false
