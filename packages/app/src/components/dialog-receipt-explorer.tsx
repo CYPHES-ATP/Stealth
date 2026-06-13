@@ -1,10 +1,11 @@
-import { For, Show, createMemo } from "solid-js"
+import { For, Show, createMemo, createSignal } from "solid-js"
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
 import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/handoff"
 import { copyText } from "@/utils/copy"
+import { verifyHandoffReceiptRoot } from "@/utils/receipt-verifier"
 
 type AnchorProofEvidence = HandoffEvidence & {
   anchor?: {
@@ -68,6 +69,11 @@ export function DialogReceiptExplorer(props: {
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
   const scopedLease = createMemo(() => props.evidence.scope?.lease)
+  const [localVerification, setLocalVerification] = createSignal<{
+    ok: boolean
+    receipt_root: string | null
+    recomputed_root: string | null
+  } | null>(null)
   const permissionJson = createMemo(() => {
     const permission = props.evidence.scope?.permission
     if (permission === undefined || permission === null) return null
@@ -119,6 +125,26 @@ export function DialogReceiptExplorer(props: {
       })
   }
 
+  const verifyReceipt = () => {
+    void verifyHandoffReceiptRoot(props.evidence)
+      .then((result) => {
+        setLocalVerification(result)
+        showToast({
+          variant: result.ok ? "success" : "error",
+          title: result.ok ? "Receipt verified" : "Receipt verification failed",
+          description: result.ok
+            ? "Local receipt root matches anchor.receipt_root"
+            : "Local receipt root does not match anchor.receipt_root",
+        })
+      })
+      .catch((error: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        })
+      })
+  }
+
   return (
     <Dialog
       title="Receipt details"
@@ -134,6 +160,13 @@ export function DialogReceiptExplorer(props: {
             </div>
           </div>
           <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={verifyReceipt}
+            >
+              Verify receipt
+            </button>
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
@@ -304,7 +337,23 @@ export function DialogReceiptExplorer(props: {
                 <span class="break-all font-mono">{anchorTxHash()}</span>
                 <span>verifier</span>
                 <span>{anchorVerifierStatus()}</span>
+                <span>local verifier</span>
+                <span>{localVerification() ? (localVerification()!.ok ? "passed" : "failed") : "not run"}</span>
               </div>
+
+              <Show when={localVerification()}>
+                {(result) => (
+                  <div class="mt-3 rounded border border-border-weak-base bg-surface-panel p-2 text-10-regular text-text-weak">
+                    <div class="mb-1 text-11-medium text-text-base">Local verification details</div>
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                      <span>expected root</span>
+                      <span class="break-all font-mono">{result().receipt_root ?? "missing"}</span>
+                      <span>recomputed root</span>
+                      <span class="break-all font-mono">{result().recomputed_root ?? "missing"}</span>
+                    </div>
+                  </div>
+                )}
+              </Show>
 
               <div class="mt-3">
                 <div class="mb-1 text-11-medium text-text-base">Copy payload preview</div>
