@@ -7,6 +7,7 @@ import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/han
 import { copyText } from "@/utils/copy"
 import { applyLocalMerkleProofToEvidence, attachLocalMerkleProof, verifyLocalMerkleProof } from "@/utils/merkle-proof"
 import { verifyHandoffReceiptRoot } from "@/utils/receipt-verifier"
+import { prepareSepoliaAnchorPayload } from "@/utils/sepolia-anchor-payload"
 
 type AnchorProofEvidence = HandoffEvidence & {
   anchor?: {
@@ -46,6 +47,7 @@ export function DialogReceiptExplorer(props: {
   })
   const [localMerkleProof, setLocalMerkleProof] = createSignal<ReturnType<typeof attachLocalMerkleProof> | null>(null)
   const [localMerkleVerification, setLocalMerkleVerification] = createSignal<ReturnType<typeof verifyLocalMerkleProof> | null>(null)
+  const [sepoliaPayload, setSepoliaPayload] = createSignal<ReturnType<typeof prepareSepoliaAnchorPayload> | null>(null)
 
   const effectiveEvidence = createMemo(() => {
     const evidence = props.evidence as AnchorProofEvidence
@@ -71,6 +73,9 @@ export function DialogReceiptExplorer(props: {
       {
         receipt_root: receiptRoot(),
         merkle_proof_status: merkleProofStatus(),
+        merkle_root: merkleRoot(),
+        merkle_leaf_index: merkleLeafIndex(),
+        merkle_proof: merkleProofEntries(),
         onchain_anchor_status: onchainAnchorStatus(),
         network: anchorNetwork(),
         contract: anchorContract(),
@@ -81,6 +86,7 @@ export function DialogReceiptExplorer(props: {
       2,
     ),
   )
+  const sepoliaPayloadJson = createMemo(() => (sepoliaPayload() ? JSON.stringify(sepoliaPayload(), null, 2) : null))
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
   const evidenceJson = createMemo(() => evidenceToJson(effectiveEvidence()))
   const scopedLease = createMemo(() => props.evidence.scope?.lease)
@@ -138,6 +144,51 @@ export function DialogReceiptExplorer(props: {
           description: error instanceof Error ? error.message : String(error),
         })
       })
+  }
+
+  const copySepoliaPayload = () => {
+    const payload = sepoliaPayload()
+    if (!payload) {
+      showToast({
+        title: language.t("common.requestFailed"),
+        description: "Prepare Sepolia anchor payload first.",
+      })
+      return
+    }
+
+    void copyText(JSON.stringify(payload, null, 2))
+      .then(() => {
+        showToast({
+          variant: "success",
+          icon: "circle-check",
+          title: language.t("session.share.copy.copied"),
+          description: "Sepolia anchor payload copied to clipboard",
+        })
+      })
+      .catch((error: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        })
+      })
+  }
+
+  const prepareSepoliaPayload = () => {
+    try {
+      const payload = prepareSepoliaAnchorPayload(effectiveEvidence() as AnchorProofEvidence)
+      setSepoliaPayload(payload)
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: "Sepolia payload ready",
+        description: "Prepared locally only. Use Copy Sepolia payload to export it.",
+      })
+    } catch (error) {
+      showToast({
+        title: language.t("common.requestFailed"),
+        description: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 
   const verifyReceipt = () => {
@@ -209,6 +260,20 @@ export function DialogReceiptExplorer(props: {
               onClick={attachMerkleProof}
             >
               Attach local Merkle proof
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={prepareSepoliaPayload}
+            >
+              Prepare Sepolia anchor payload
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={copySepoliaPayload}
+            >
+              Copy Sepolia payload
             </button>
             <button
               type="button"
@@ -388,6 +453,10 @@ export function DialogReceiptExplorer(props: {
                 <span class="break-all font-mono">{anchorTxHash()}</span>
                 <span>anchor verifier</span>
                 <span>{anchorVerifierStatus()}</span>
+                <span>Sepolia payload</span>
+                <span>{sepoliaPayload() ? "ready" : "not prepared"}</span>
+                <span>submit status</span>
+                <span>{sepoliaPayload() ? "not submitted" : "not prepared"}</span>
                 <span>local verifier</span>
                 <span>{localVerification() ? (localVerification()!.ok ? "passed" : "failed") : "not run"}</span>
               </div>
@@ -420,6 +489,31 @@ export function DialogReceiptExplorer(props: {
                       <span>{result().merkle_leaf_index ?? "missing"}</span>
                       <span>proof entries</span>
                       <span>{result().merkle_proof_count}</span>
+                    </div>
+                  </div>
+                )}
+              </Show>
+
+              <Show when={sepoliaPayload()}>
+                {(payload) => (
+                  <div class="mt-3 rounded border border-border-weak-base bg-surface-panel p-2 text-10-regular text-text-weak">
+                    <div class="mb-1 text-11-medium text-text-base">Sepolia anchor payload</div>
+                    <div class="mb-1 text-10-regular text-text-weak">Prepared locally only. Not submitted, not anchored, not on-chain verified.</div>
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                      <span>schema</span>
+                      <span class="break-all font-mono">{payload().schema}</span>
+                      <span>anchor target</span>
+                      <span>{payload().anchor_target}</span>
+                      <span>network</span>
+                      <span>{payload().network}</span>
+                      <span>receipt root</span>
+                      <span class="break-all font-mono">{payload().receipt_root}</span>
+                      <span>merkle root</span>
+                      <span class="break-all font-mono">{payload().merkle_root}</span>
+                      <span>leaf index</span>
+                      <span>{payload().merkle_leaf_index}</span>
+                      <span>proof entries</span>
+                      <span>{payload().merkle_proof.length}</span>
                     </div>
                   </div>
                 )}
