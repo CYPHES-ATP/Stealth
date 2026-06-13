@@ -8,6 +8,7 @@ import { copyText } from "@/utils/copy"
 import { applyLocalMerkleProofToEvidence, attachLocalMerkleProof, verifyLocalMerkleProof } from "@/utils/merkle-proof"
 import { verifyHandoffReceiptRoot } from "@/utils/receipt-verifier"
 import { prepareSepoliaAnchorPayload } from "@/utils/sepolia-anchor-payload"
+import { importSepoliaAnchorResult } from "@/utils/sepolia-anchor-result"
 
 type AnchorProofEvidence = HandoffEvidence & {
   anchor?: {
@@ -48,11 +49,24 @@ export function DialogReceiptExplorer(props: {
   const [localMerkleProof, setLocalMerkleProof] = createSignal<ReturnType<typeof attachLocalMerkleProof> | null>(null)
   const [localMerkleVerification, setLocalMerkleVerification] = createSignal<ReturnType<typeof verifyLocalMerkleProof> | null>(null)
   const [sepoliaPayload, setSepoliaPayload] = createSignal<ReturnType<typeof prepareSepoliaAnchorPayload> | null>(null)
+  const [importedAnchorResult, setImportedAnchorResult] = createSignal<ReturnType<typeof importSepoliaAnchorResult> | null>(null)
 
   const effectiveEvidence = createMemo(() => {
     const evidence = props.evidence as AnchorProofEvidence
     const proof = localMerkleProof()
-    return proof ? applyLocalMerkleProofToEvidence(evidence, proof) : evidence
+    const proofApplied = proof ? applyLocalMerkleProofToEvidence(evidence, proof) : evidence
+    const imported = importedAnchorResult()
+    if (!imported) return proofApplied
+    return {
+      ...proofApplied,
+      anchor: {
+        ...(proofApplied.anchor ?? {}),
+        onchain_anchor_status: imported.onchain_anchor_status,
+        network: imported.network,
+        contract: imported.contract,
+        tx_hash: imported.tx_hash,
+      },
+    }
   })
   const anchorProof = createMemo(() => {
     const evidence = effectiveEvidence() as AnchorProofEvidence
@@ -191,6 +205,28 @@ export function DialogReceiptExplorer(props: {
     }
   }
 
+  const importAnchorResult = () => {
+    const raw = globalThis.prompt?.("Paste Sepolia anchor result JSON")
+    if (!raw) return
+
+    try {
+      const parsed = JSON.parse(raw)
+      const imported = importSepoliaAnchorResult(effectiveEvidence() as AnchorProofEvidence, parsed)
+      setImportedAnchorResult(imported)
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: "Sepolia anchor result imported",
+        description: "Imported locally only. On-chain anchor status updated from pasted result.",
+      })
+    } catch (error) {
+      showToast({
+        title: language.t("common.requestFailed"),
+        description: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
   const verifyReceipt = () => {
     void verifyHandoffReceiptRoot(props.evidence)
       .then((result) => {
@@ -274,6 +310,13 @@ export function DialogReceiptExplorer(props: {
               onClick={copySepoliaPayload}
             >
               Copy Sepolia payload
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={importAnchorResult}
+            >
+              Import Sepolia anchor result
             </button>
             <button
               type="button"
@@ -453,6 +496,8 @@ export function DialogReceiptExplorer(props: {
                 <span class="break-all font-mono">{anchorTxHash()}</span>
                 <span>anchor verifier</span>
                 <span>{anchorVerifierStatus()}</span>
+                <span>anchor result</span>
+                <span>{importedAnchorResult() ? "imported" : "not imported"}</span>
                 <span>Sepolia payload</span>
                 <span>{sepoliaPayload() ? "ready" : "not prepared"}</span>
                 <span>submit status</span>
