@@ -298,6 +298,26 @@ function encodeHandoffEvidence(value: HandoffEvidence): HandoffEvidence {
   return Schema.encodeSync(HandoffEvidenceSchema)(value) as HandoffEvidence
 }
 
+function deriveScopedLeaseMode(
+  allowedActions: HandoffAuthorizationAction[],
+): "read_only" | "edit" | "execute" {
+  if (allowedActions.length === 0) return "read_only"
+
+  const permissions = allowedActions
+    .filter((rule) => rule.action === "allow")
+    .map((rule) => rule.permission.toLowerCase())
+
+  if (permissions.some((permission) => permission === "*")) return "execute"
+  if (permissions.some((permission) => permission.includes("shell") || permission.includes("bash") || permission.includes("execute"))) {
+    return "execute"
+  }
+  if (permissions.some((permission) => permission.includes("write") || permission.includes("edit") || permission.includes("patch"))) {
+    return "edit"
+  }
+
+  return "read_only"
+}
+
 export function buildHandoffEvidence(input: {
   session: Session.Info
   messages: MessageV2.WithParts[]
@@ -315,7 +335,7 @@ export function buildHandoffEvidence(input: {
   const leaseStatus = allowedActions.length > 0 ? "active" as const : "missing" as const
   const scopedLease = {
     id: `${input.session.id}:scoped-lease:v1`,
-    mode: "read_only" as const,
+    mode: deriveScopedLeaseMode(allowedActions),
     target: input.session.directory,
     allowed_actions: allowedActions,
     issued_at: input.session.time.created ?? null,
