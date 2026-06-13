@@ -5,12 +5,16 @@ import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
 import type { HandoffEvidence, HandoffReceiptSummary } from "@/pages/session/handoff"
 import { copyText } from "@/utils/copy"
+import { applyLocalMerkleProofToEvidence, attachLocalMerkleProof, verifyLocalMerkleProof } from "@/utils/merkle-proof"
 import { verifyHandoffReceiptRoot } from "@/utils/receipt-verifier"
 
 type AnchorProofEvidence = HandoffEvidence & {
   anchor?: {
     receipt_root?: string | null
     merkle_proof_status?: string | null
+    merkle_root?: string | null
+    merkle_leaf_index?: number | null
+    merkle_proof?: string[]
     onchain_anchor_status?: string | null
     network?: string | null
     contract?: string | null
@@ -40,13 +44,24 @@ export function DialogReceiptExplorer(props: {
     const evidenceDiffHash = props.evidence.changes?.diff_sha256
     return evidenceDiffHash && evidenceDiffHash.length > 0 ? evidenceDiffHash : props.summary.diffSha256 ?? "none"
   })
-  const anchorProof = createMemo(() => {
+  const [localMerkleProof, setLocalMerkleProof] = createSignal<ReturnType<typeof attachLocalMerkleProof> | null>(null)
+  const [localMerkleVerification, setLocalMerkleVerification] = createSignal<ReturnType<typeof verifyLocalMerkleProof> | null>(null)
+
+  const effectiveEvidence = createMemo(() => {
     const evidence = props.evidence as AnchorProofEvidence
+    const proof = localMerkleProof()
+    return proof ? applyLocalMerkleProofToEvidence(evidence, proof) : evidence
+  })
+  const anchorProof = createMemo(() => {
+    const evidence = effectiveEvidence() as AnchorProofEvidence
     return evidence.anchor ?? evidence.proof
   })
   const receiptRoot = createMemo(() => anchorProof()?.receipt_root ?? resolvedDiffHash())
   const merkleProofStatus = createMemo(() => anchorProof()?.merkle_proof_status ?? "not attached")
-  const onchainAnchorStatus = createMemo(() => anchorProof()?.onchain_anchor_status ?? "not attached")
+  const merkleRoot = createMemo(() => anchorProof()?.merkle_root ?? null)
+  const merkleLeafIndex = createMemo(() => anchorProof()?.merkle_leaf_index ?? null)
+  const merkleProofEntries = createMemo(() => anchorProof()?.merkle_proof ?? [])
+  const onchainAnchorStatus = createMemo(() => anchorProof()?.onchain_anchor_status ?? "not anchored")
   const anchorNetwork = createMemo(() => anchorProof()?.network ?? "unknown")
   const anchorContract = createMemo(() => anchorProof()?.contract ?? "not attached")
   const anchorTxHash = createMemo(() => anchorProof()?.tx_hash ?? "not attached")
@@ -67,7 +82,7 @@ export function DialogReceiptExplorer(props: {
     ),
   )
   const commands = createMemo(() => (props.evidence.commands ?? []).filter((item) => !!item.command))
-  const evidenceJson = createMemo(() => evidenceToJson(props.evidence))
+  const evidenceJson = createMemo(() => evidenceToJson(effectiveEvidence()))
   const scopedLease = createMemo(() => props.evidence.scope?.lease)
   const [localVerification, setLocalVerification] = createSignal<{
     ok: boolean
@@ -145,6 +160,27 @@ export function DialogReceiptExplorer(props: {
       })
   }
 
+  const attachMerkleProof = () => {
+    try {
+      const proof = attachLocalMerkleProof(props.evidence as AnchorProofEvidence)
+      const verification = verifyLocalMerkleProof(proof)
+      setLocalMerkleProof(proof)
+      setLocalMerkleVerification(verification)
+      showToast({
+        variant: verification.ok ? "success" : "error",
+        title: verification.ok ? "Local Merkle proof attached" : "Local Merkle proof failed",
+        description: verification.ok
+          ? "One-leaf local Merkle proof attached. This is not on-chain verified."
+          : "Local Merkle proof did not verify.",
+      })
+    } catch (error) {
+      showToast({
+        title: language.t("common.requestFailed"),
+        description: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
   return (
     <Dialog
       title="Receipt details"
@@ -166,6 +202,13 @@ export function DialogReceiptExplorer(props: {
               onClick={verifyReceipt}
             >
               Verify receipt
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+              onClick={attachMerkleProof}
+            >
+              Attach local Merkle proof
             </button>
             <button
               type="button"
@@ -325,8 +368,16 @@ export function DialogReceiptExplorer(props: {
               <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-11-regular text-text-weak">
                 <span>receipt root</span>
                 <span class="break-all font-mono">{receiptRoot()}</span>
-                <span>Merkle proof</span>
+                <span>local Merkle proof</span>
                 <span>{merkleProofStatus()}</span>
+                <span>merkle root</span>
+                <span class="break-all font-mono">{merkleRoot() ?? "not attached"}</span>
+                <span>merkle leaf index</span>
+                <span>{merkleLeafIndex() ?? "not attached"}</span>
+                <span>proof entries</span>
+                <span>{merkleProofEntries().length}</span>
+                <span>merkle verifier</span>
+                <span>{localMerkleVerification() ? (localMerkleVerification()!.ok ? "passed" : "failed") : "not run"}</span>
                 <span>on-chain anchor</span>
                 <span>{onchainAnchorStatus()}</span>
                 <span>network</span>
@@ -350,6 +401,25 @@ export function DialogReceiptExplorer(props: {
                       <span class="break-all font-mono">{result().receipt_root ?? "missing"}</span>
                       <span>recomputed root</span>
                       <span class="break-all font-mono">{result().recomputed_root ?? "missing"}</span>
+                    </div>
+                  </div>
+                )}
+              </Show>
+
+              <Show when={localMerkleVerification()}>
+                {(result) => (
+                  <div class="mt-3 rounded border border-border-weak-base bg-surface-panel p-2 text-10-regular text-text-weak">
+                    <div class="mb-1 text-11-medium text-text-base">Local Merkle proof details</div>
+                    <div class="mb-1 text-10-regular text-text-weak">This is a local/off-chain one-leaf proof. It is not on-chain verified.</div>
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                      <span>merkle root</span>
+                      <span class="break-all font-mono">{result().merkle_root ?? "missing"}</span>
+                      <span>recomputed root</span>
+                      <span class="break-all font-mono">{result().recomputed_root ?? "missing"}</span>
+                      <span>leaf index</span>
+                      <span>{result().merkle_leaf_index ?? "missing"}</span>
+                      <span>proof entries</span>
+                      <span>{result().merkle_proof_count}</span>
                     </div>
                   </div>
                 )}
