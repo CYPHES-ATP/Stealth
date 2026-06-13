@@ -38,6 +38,7 @@ import { useSync } from "@/context/sync"
 import { useComments } from "@/context/comments"
 import { Button } from "@opencode-ai/ui/button"
 import { DockShellForm, DockTray } from "@opencode-ai/ui/dock-surface"
+import { Switch as ToggleSwitch } from "@opencode-ai/ui/switch"
 import { Icon, type IconProps } from "@opencode-ai/ui/icon"
 import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
 import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
@@ -1434,6 +1435,19 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     style: control(),
     onPress: () => void addProject(),
   }))
+  const AutoAcceptControl = () => (
+    <Show when={newSession()}>
+      <div data-action="prompt-auto-accept" class="shrink-0 px-2">
+        <ToggleSwitch
+          checked={accepting()}
+          onChange={() => permission.toggleAutoAcceptDirectory(sdk.directory)}
+          class="flex items-center gap-2 text-12-medium text-text-base"
+        >
+          Auto Accept
+        </ToggleSwitch>
+      </div>
+    </Show>
+  )
 
   return (
     <div class="relative size-full flex flex-col gap-0">
@@ -1569,6 +1583,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     <ComposerPickerTrigger state={newProjectTriggerState()} />
                   </Show>
                   <ComposerModelControl state={modelControlState()} />
+                  <AutoAcceptControl />
                 </div>
                 <Tooltip placement="top" inactive={!working() && blank()} value={tip()}>
                   <IconButton
@@ -1917,6 +1932,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                             </TooltipKeybind>
                           </div>
                         </Show>
+                        <AutoAcceptControl />
                       </Show>
                     </Show>
                   </div>
