@@ -335,7 +335,7 @@ export function DialogReceiptExplorer(props: {
                 <span class="break-all font-mono">{anchorContract()}</span>
                 <span>tx</span>
                 <span class="break-all font-mono">{anchorTxHash()}</span>
-                <span>verifier</span>
+                <span>anchor verifier</span>
                 <span>{anchorVerifierStatus()}</span>
                 <span>local verifier</span>
                 <span>{localVerification() ? (localVerification()!.ok ? "passed" : "failed") : "not run"}</span>
