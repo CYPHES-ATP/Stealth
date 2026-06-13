@@ -1,12 +1,15 @@
 import { base64Encode } from "@opencode-ai/core/util/encode"
+import { pathKey } from "@/utils/path-key"
+
+const normalizeDirectoryKey = (directory: string) => pathKey(directory.trim()).toLowerCase()
 
 export function acceptKey(sessionID: string, directory?: string) {
   if (!directory) return sessionID
-  return `${base64Encode(directory)}/${sessionID}`
+  return `${base64Encode(normalizeDirectoryKey(directory))}/${sessionID}`
 }
 
 export function directoryAcceptKey(directory: string) {
-  return `${base64Encode(directory)}/*`
+  return `${base64Encode(normalizeDirectoryKey(directory))}/*`
 }
 
 function accepted(autoAccept: Record<string, boolean>, sessionID: string, directory?: string) {

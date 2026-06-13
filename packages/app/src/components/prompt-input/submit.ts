@@ -315,7 +315,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
 
     const projectDirectory = sdk.directory
     const isNewSession = !params.id
-    const shouldAutoAccept = isNewSession && input.autoAccept()
+    const inputAutoAccept = isNewSession && input.autoAccept()
     const worktreeSelection = input.newSessionWorktree?.() || "main"
 
     let sessionDirectory = projectDirectory
@@ -360,13 +360,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       input.onNewSessionWorktreeReset?.()
     }
 
+    const directoryAutoAccept = permission.isAutoAcceptingDirectory(sessionDirectory)
+    const preCreateShouldAutoAccept = isNewSession && (inputAutoAccept || directoryAutoAccept)
+
     let session = input.info()
     if (!session && isNewSession) {
       const autoAcceptPermission = [{ permission: "*", pattern: "*", action: "allow" }] as const
       const created = await client.session
-        .create({
-          ...(shouldAutoAccept ? { permission: [...autoAcceptPermission] } : {}),
-        })
+        .create()
         .then((x) => x.data ?? undefined)
         .catch((err) => {
           showToast({
@@ -378,7 +379,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       if (created) {
         seed(sessionDirectory, created)
         session = created
-        if (shouldAutoAccept) {
+        const postCreateDirectoryAutoAccept = permission.isAutoAcceptingDirectory(sessionDirectory)
+        const postCreateShouldAutoAccept = isNewSession && (inputAutoAccept || postCreateDirectoryAutoAccept)
+        if (postCreateShouldAutoAccept) {
+          await client.session.update({
+            sessionID: session.id,
+            permission: [...autoAcceptPermission],
+          })
           permission.enableAutoAccept(session.id, sessionDirectory)
         }
         local.session.promote(sessionDirectory, session.id)
