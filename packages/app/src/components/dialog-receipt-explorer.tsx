@@ -85,6 +85,10 @@ export function DialogReceiptExplorer(props: {
   const anchorContract = createMemo(() => anchorProof()?.contract ?? "not attached")
   const anchorTxHash = createMemo(() => anchorProof()?.tx_hash ?? "not attached")
   const anchorVerifierStatus = createMemo(() => anchorProof()?.verifier_status ?? props.summary.verifierStatus ?? "not verified")
+  const hasAttachedMerkleProof = createMemo(() => {
+    const root = merkleRoot()
+    return merkleProofStatus() === "attached" && typeof root === "string" && root.length > 0
+  })
   const anchorProofJson = createMemo(() =>
     JSON.stringify(
       {
@@ -192,6 +196,14 @@ export function DialogReceiptExplorer(props: {
 
   const prepareSepoliaPayload = () => {
     try {
+      if (!hasAttachedMerkleProof()) {
+        showToast({
+          title: "Attach local Merkle proof first",
+          description: "Step 2 must be completed before preparing a Sepolia payload.",
+        })
+        return
+      }
+
       const payload = prepareSepoliaAnchorPayload(effectiveEvidence() as AnchorProofEvidence)
       setSepoliaPayload(payload)
       showToast({
@@ -210,6 +222,16 @@ export function DialogReceiptExplorer(props: {
 
   const importAnchorResult = () => {
     try {
+      if (!hasAttachedMerkleProof()) {
+        const message = "Step 2 required: attach local Merkle proof first."
+        setAnchorImportStatus(message)
+        showToast({
+          title: "Attach local Merkle proof first",
+          description: "The imported Sepolia receiptRoot must match anchor.merkle_root.",
+        })
+        return
+      }
+
       const raw = anchorImportText().trim()
       if (!raw) {
         setAnchorImportStatus("Paste Sepolia anchor result JSON first.")
@@ -296,28 +318,28 @@ export function DialogReceiptExplorer(props: {
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
               onClick={verifyReceipt}
             >
-              Verify receipt
+              1. Verify receipt
             </button>
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
               onClick={attachMerkleProof}
             >
-              Attach local Merkle proof
+              2. Attach local Merkle proof
             </button>
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
               onClick={prepareSepoliaPayload}
             >
-              Prepare Sepolia anchor payload
+              3. Prepare Sepolia payload
             </button>
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
               onClick={copySepoliaPayload}
             >
-              Copy Sepolia payload
+              4. Copy Sepolia payload
             </button>
             <button
               type="button"
@@ -325,16 +347,19 @@ export function DialogReceiptExplorer(props: {
               onClick={() => {
                 setAnchorImportStatus(null)
                 setShowSepoliaAnchorImport(true)
+                if (!hasAttachedMerkleProof()) {
+                  setAnchorImportStatus("Step 2 required: attach local Merkle proof first.")
+                }
               }}
             >
-              Import Sepolia anchor result
+              5. Import Sepolia result
             </button>
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
               onClick={copyJson}
             >
-              Copy JSON
+              6. Copy final JSON
             </button>
             <button
               type="button"
@@ -343,6 +368,20 @@ export function DialogReceiptExplorer(props: {
             >
               Close
             </button>
+          </div>
+        </div>
+
+        <div class="rounded-md border border-border-weak-base bg-background-base p-3 text-11-regular text-text-weak">
+          <div class="mb-1 text-12-semibold text-text-base">Guided receipt anchor flow</div>
+          <div>Order: [1] -&gt; [2] -&gt; [3] -&gt; [4] -&gt; [5] -&gt; [6]</div>
+          <div class="mt-1">[1] Verify receipt</div>
+          <div>[2] Attach local Merkle proof</div>
+          <div>[3] Prepare Sepolia payload</div>
+          <div>[4] Copy Sepolia payload</div>
+          <div>[5] Import Sepolia result</div>
+          <div>[6] Copy final JSON</div>
+          <div class="mt-2">
+            current requirement: {hasAttachedMerkleProof() ? "Merkle proof attached - Sepolia result can be imported." : "Attach local Merkle proof first."}
           </div>
         </div>
 
