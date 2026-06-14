@@ -229,8 +229,57 @@ proof first, scoring second
 A receipt must be independently verifiable before it can affect reputation.
 
 Receipt Protocol v0 does not define a reputation scoring rule. It only defines the evidence layer that future reputation systems may consume.
+## 11 Future Extension: Receipt-Driven Feedback Loop
 
-## 11. Non-goals for v0
+Verified work receipts may later become feedback signals for adaptive agent systems.
+
+Receipt Protocol v0 does not define the scoring or routing algorithm. It only defines the independently verifiable evidence object that future systems may consume.
+
+A future receipt-driven feedback loop may update:
+
+* agent selection
+* mission decomposition
+* hypothesis priority
+* validator routing
+* resource allocation
+* future search behavior
+
+A concrete CYPHES-style loop could be:
+
+```text
+EXPLORE -> PROVE -> SCORE -> REINFORCE -> DECAY -> RE-ROUTE
+```
+
+In this model:
+
+1. **Explore**
+   agents attempt work, search paths, hypotheses, or tasks.
+
+2. **Prove**
+   the system emits a verifiable receipt for the work path.
+
+3. **Score**
+   only independently verified receipts become eligible for scoring.
+
+4. **Reinforce**
+   successful verified patterns can influence future routing and allocation.
+
+5. **Decay**
+   older receipts lose influence over time unless reinforced by newer verified work.
+
+6. **Re-route**
+   weak, stale, failed, or unverifiable work paths are deprioritized.
+
+Protocol rule:
+
+```text
+receipts are proof inputs, not reputation outputs
+```
+
+The receipt layer makes work independently verifiable.
+The feedback layer may later consume verified receipts to update adaptive behavior.
+
+## 12. Non-goals for v0
 
 Receipt Protocol v0 does not define:
 
@@ -246,5 +295,5 @@ Receipt Protocol v0 does not define:
 * agent routing or reinforcement policy
 * compensation economics
 * automatic resource allocation based on receipts
-
+* receipt-driven feedback loop execution
 These are future extensions.
