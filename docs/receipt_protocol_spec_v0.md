@@ -210,7 +210,7 @@ contract: 0x461e60fa7D2Bd9512DE1B043A3e8d206462D34f5
 tx_hash: 0x03828c9ba39f27a7f433a3e830160c7fa30c1993877ed6563e74705e300d082c
 receipt_root / merkle_root: 0xb7ab6e747a888e341e3d6a3a1b22f28e0c6adbf454a57be30ca4336cb6954e16
 ```
-## 10. ## Receipt vs Reputation
+## 10.  Receipt vs Reputation
 
 Receipt Protocol v0 separates verification from reputation.
 
