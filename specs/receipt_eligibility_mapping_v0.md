@@ -205,8 +205,35 @@ attestation + commitment proof + settled outcome -> receipt eligibility
 ```
 
 The receipt must remain a recomputable view over those facts.
+## 8. Alignment with ERC-8275 Appendix A
 
-## 8. Canonical receipt root
+ReceiptOS must key off the same anchors used by the surrounding stack, not create a parallel set of eligibility facts.
+
+The aligned spine is:
+
+```text
+OCP / ERC-8281 input committed
+-> WYRIWE / ERC-8299 model received input
+-> ERC-8274 verify
+-> ERC-8263 verdict committed before outcome
+-> settled outcome
+-> ERC-8275 reputation
+```
+
+In this mapping:
+
+* `anchor_result` resolves to the existing ERC-8263 verdict commitment / `committed_at` gate referenced by ERC-8275 Appendix A.
+* `settled_outcome_ref` resolves to the same public settled-outcome account or digest consumed by the reputation recompute path.
+* `receipt_root` and `merkle_root` bundle the WYRIWE attestation reference, the ERC-8263 commitment proof, and the settled outcome reference as a recomputable index over existing facts.
+
+ReceiptOS must not mint a new eligibility fact.
+
+ReceiptOS is therefore not a new source of truth. It is a recomputable view over facts already committed or settled by the surrounding stack.
+
+The receipt gates.
+It does not score.
+
+## 9. Canonical receipt root
 
 ReceiptOS v0 derives `receipt_root` by:
 
@@ -218,7 +245,7 @@ ReceiptOS v0 derives `receipt_root` by:
 
 This keeps the receipt root independently recomputable.
 
-## 9. Merkle proof and anchor binding
+## 10. Merkle proof and anchor binding
 
 ReceiptOS v0 currently supports a one-leaf Merkle proof:
 
@@ -251,7 +278,7 @@ The anchor result may update only the effective local receipt evidence overlay:
 
 It must not change the receipt root, Merkle root, proof, or verifier status.
 
-## 10. Interface contract
+## 11. Interface contract
 
 The interface contract for downstream reputation systems is:
 
@@ -267,7 +294,7 @@ Therefore:
 * reputation must not depend on a private backend assertion
 * scoring must consume verified eligibility, not replace it
 
-## 11. Reputation boundary
+## 12. Reputation boundary
 
 ReceiptOS does not score.
 
@@ -281,7 +308,7 @@ proof first, scoring second
 
 A reputation system may later consume verified receipts, but ReceiptOS v0 only defines the proof and eligibility layer.
 
-## 12. Compensation boundary
+## 13. Compensation boundary
 
 ReceiptOS does not define compensation economics.
 
@@ -295,7 +322,7 @@ per-action reputation eligibility != per-period node compensation
 
 The receipt layer should not collapse those commitments into one hash or one trusted claim.
 
-## 13. Non-goals
+## 14. Non-goals
 
 Receipt Eligibility Mapping v0 does not define:
 
@@ -310,7 +337,7 @@ Receipt Eligibility Mapping v0 does not define:
 
 This is a ReceiptOS-side draft mapping.
 
-## 14. Open questions
+## 15. Open questions
 
 * Which exact WYRIWE / 8299 fields should be referenced by the receipt?
 * Which 8263 commitment proof fields are required for the verdict gate?
@@ -320,7 +347,7 @@ This is a ReceiptOS-side draft mapping.
 * How should multi-leaf receipt batches extend the v0 one-leaf proof model?
 * Which public data sources should be considered sufficient for independent recomputation?
 
-## 15. Summary
+## 16. Summary
 
 ReceiptOS is the receipt-side eligibility seam.
 
