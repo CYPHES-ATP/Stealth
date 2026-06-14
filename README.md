@@ -116,6 +116,42 @@ Use this packaging command before cutting a local macOS test DMG:
 ```bash
 OPENCODE_CHANNEL=prod CSC_IDENTITY_AUTO_DISCOVERY=false bun --cwd packages/desktop package:mac -- --arm64
 ```
+## ReceiptOS / Verified Work Receipts
+
+Stealth includes a ReceiptOS-style evidence flow for verifiable AI/tool/action work receipts.
+
+Current v0 receipt anchor flow:
+
+```text
+receipt -> receipt_root -> Merkle proof -> Sepolia anchor -> imported anchor result -> final receipt JSON
+```
+
+The Receipt Explorer supports:
+
+* local receipt verification
+* local one-leaf Merkle proof attachment
+* Sepolia anchor payload preparation
+* Sepolia anchor result import
+* guided receipt anchor flow
+* final anchored receipt JSON export
+
+Protocol documentation:
+
+* [Receipt Protocol Spec v0](./specs/receipt_protocol_spec_v0.md)
+* [Receipt Eligibility Mapping v0](./specs/receipt_eligibility_mapping_v0.md)
+* [Readable docs copy](./docs/receipt_protocol_spec_v0.md)
+
+Demo release:
+
+* [Stealth Receipt Anchor Demo v0.1.0](https://github.com/CYPHES-ATP/Stealth/releases/tag/v0.1.0-receipt-anchor-demo)
+
+Protocol rule:
+
+```text
+proof first, scoring second
+```
+
+Receipt Protocol v0 proves the work path. Reputation, routing, scoring, compensation, and feedback loops are future layers that may consume verified receipts.
 
 ## Custom Providers
 
