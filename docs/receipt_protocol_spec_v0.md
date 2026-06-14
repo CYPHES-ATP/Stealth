@@ -210,8 +210,27 @@ contract: 0x461e60fa7D2Bd9512DE1B043A3e8d206462D34f5
 tx_hash: 0x03828c9ba39f27a7f433a3e830160c7fa30c1993877ed6563e74705e300d082c
 receipt_root / merkle_root: 0xb7ab6e747a888e341e3d6a3a1b22f28e0c6adbf454a57be30ca4336cb6954e16
 ```
+## 10. ## Receipt vs Reputation
 
-## 10. Non-goals for v0
+Receipt Protocol v0 separates verification from reputation.
+
+1. **Receipt verification**
+   proves what was requested, authorized, executed, changed, anchored, and exported as evidence.
+
+2. **Reputation update**
+   may later use verified receipts as input for agent selection, validator routing, trust score updates, and future work allocation.
+
+Protocol rule:
+
+```text
+proof first, scoring second
+```
+
+A receipt must be independently verifiable before it can affect reputation.
+
+Receipt Protocol v0 does not define a reputation scoring rule. It only defines the evidence layer that future reputation systems may consume.
+
+## 11. Non-goals for v0
 
 Receipt Protocol v0 does not define:
 
@@ -222,5 +241,10 @@ Receipt Protocol v0 does not define:
 * multi-leaf Merkle trees
 * cross-chain anchoring
 * contract deployment flow
+* reputation update logic
+* trust score calculation
+* agent routing or reinforcement policy
+* compensation economics
+* automatic resource allocation based on receipts
 
 These are future extensions.
