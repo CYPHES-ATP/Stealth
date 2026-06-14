@@ -50,6 +50,9 @@ export function DialogReceiptExplorer(props: {
   const [localMerkleVerification, setLocalMerkleVerification] = createSignal<ReturnType<typeof verifyLocalMerkleProof> | null>(null)
   const [sepoliaPayload, setSepoliaPayload] = createSignal<ReturnType<typeof prepareSepoliaAnchorPayload> | null>(null)
   const [importedAnchorResult, setImportedAnchorResult] = createSignal<ReturnType<typeof importSepoliaAnchorResult> | null>(null)
+  const [showSepoliaAnchorImport, setShowSepoliaAnchorImport] = createSignal(false)
+  const [anchorImportText, setAnchorImportText] = createSignal("")
+  const [anchorImportStatus, setAnchorImportStatus] = createSignal<string | null>(null)
 
   const effectiveEvidence = createMemo(() => {
     const evidence = props.evidence as AnchorProofEvidence
@@ -206,13 +209,16 @@ export function DialogReceiptExplorer(props: {
   }
 
   const importAnchorResult = () => {
-    const raw = globalThis.prompt?.("Paste Sepolia anchor result JSON")
-    if (!raw) return
-
     try {
+      const raw = anchorImportText().trim()
+      if (!raw) {
+        setAnchorImportStatus("Paste Sepolia anchor result JSON first.")
+        return
+      }
       const parsed = JSON.parse(raw)
       const imported = importSepoliaAnchorResult(effectiveEvidence() as AnchorProofEvidence, parsed)
       setImportedAnchorResult(imported)
+      setAnchorImportStatus("Sepolia anchor result imported.")
       showToast({
         variant: "success",
         icon: "circle-check",
@@ -220,9 +226,11 @@ export function DialogReceiptExplorer(props: {
         description: "Imported locally only. On-chain anchor status updated from pasted result.",
       })
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      setAnchorImportStatus(message)
       showToast({
         title: language.t("common.requestFailed"),
-        description: error instanceof Error ? error.message : String(error),
+        description: message,
       })
     }
   }
@@ -314,7 +322,10 @@ export function DialogReceiptExplorer(props: {
             <button
               type="button"
               class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
-              onClick={importAnchorResult}
+              onClick={() => {
+                setAnchorImportStatus(null)
+                setShowSepoliaAnchorImport(true)
+              }}
             >
               Import Sepolia anchor result
             </button>
@@ -334,6 +345,51 @@ export function DialogReceiptExplorer(props: {
             </button>
           </div>
         </div>
+
+        <Show when={showSepoliaAnchorImport()}>
+          <div class="rounded-md border border-border-weak-base bg-background-base p-3">
+            <div class="mb-2 text-12-semibold text-text-base">Import Sepolia anchor result</div>
+            <div class="mb-2 text-11-regular text-text-weak">anchor import panel: open</div>
+            <textarea
+              class="mb-2 h-32 w-full resize-y rounded border border-border-weak-base bg-surface-panel p-2 font-mono text-10-regular text-text-base"
+              value={anchorImportText()}
+              onInput={(event) => setAnchorImportText(event.currentTarget.value)}
+              placeholder="Paste Sepolia anchor result JSON here"
+            />
+            <div class="mb-2 flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+                onClick={importAnchorResult}
+              >
+                Import
+              </button>
+              <button
+                type="button"
+                class="rounded border border-border-weak-base px-2 py-1 text-11-regular text-text-weak hover:text-text-base"
+                onClick={() => {
+                  setAnchorImportText("")
+                  setAnchorImportStatus(null)
+                  setShowSepoliaAnchorImport(false)
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+            <Show when={anchorImportStatus()}>
+              <div class="mb-2 whitespace-pre-wrap text-11-regular text-text-weak">{anchorImportStatus()}</div>
+            </Show>
+            <Show when={importedAnchorResult()}>
+              <div class="space-y-1 rounded border border-border-weak-base bg-surface-panel p-2 text-11-regular text-text-weak">
+                <div>anchor result: imported</div>
+                <div>on-chain anchor: anchored</div>
+                <div>network: sepolia</div>
+                <div>contract: {importedAnchorResult()?.contract}</div>
+                <div>tx hash: {importedAnchorResult()?.tx_hash}</div>
+              </div>
+            </Show>
+          </div>
+        </Show>
 
         <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,360px)]">
           <div class="min-h-0 space-y-3 overflow-auto pr-1">
