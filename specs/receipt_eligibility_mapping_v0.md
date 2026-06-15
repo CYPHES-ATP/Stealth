@@ -233,7 +233,33 @@ ReceiptOS is therefore not a new source of truth. It is a recomputable view over
 The receipt gates.
 It does not score.
 
-## 9. Canonical receipt root
+## 9. Canonical reputation-input field names
+
+ReceiptOS should key its receipt anchors off the same canonical fields consumed by the reputation recompute path.
+
+The current aligned field mapping is:
+
+| ReceiptOS field                | Canonical field it resolves to                                             | Meaning                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `anchor_result`                | `commitment_proof`                                                         | The ERC-8263 / `committed_at` gate. This binds the verdict commitment before the settled outcome. |
+| `settled_outcome_ref`          | `outcome_evidence.account` + `settled_digests[]`                           | The public settled-outcome account or digest consumed by the reputation recompute path.           |
+| `receipt_root` / `merkle_root` | recomputable index over `{ event_id, commitment_proof, outcome_evidence }` | A receipt index over existing facts, not a new source of truth.                                   |
+
+ReceiptOS must therefore not introduce a parallel anchor set.
+
+The receipt should resolve to facts already committed or settled by the surrounding stack:
+
+```text
+event_id
++ commitment_proof
++ outcome_evidence
+-> receipt_root / merkle_root
+-> recomputable eligibility view
+```
+
+This keeps the receipt, reputation-input path, and settler path keyed to the same facts.
+
+## 10. Canonical receipt root
 
 ReceiptOS v0 derives `receipt_root` by:
 
@@ -245,7 +271,7 @@ ReceiptOS v0 derives `receipt_root` by:
 
 This keeps the receipt root independently recomputable.
 
-## 10. Merkle proof and anchor binding
+## 11. Merkle proof and anchor binding
 
 ReceiptOS v0 currently supports a one-leaf Merkle proof:
 
@@ -278,7 +304,7 @@ The anchor result may update only the effective local receipt evidence overlay:
 
 It must not change the receipt root, Merkle root, proof, or verifier status.
 
-## 11. Interface contract
+## 12. Interface contract
 
 The interface contract for downstream reputation systems is:
 
@@ -294,7 +320,7 @@ Therefore:
 * reputation must not depend on a private backend assertion
 * scoring must consume verified eligibility, not replace it
 
-## 12. Reputation boundary
+## 13. Reputation boundary
 
 ReceiptOS does not score.
 
@@ -308,7 +334,7 @@ proof first, scoring second
 
 A reputation system may later consume verified receipts, but ReceiptOS v0 only defines the proof and eligibility layer.
 
-## 13. Compensation boundary
+## 14. Compensation boundary
 
 ReceiptOS does not define compensation economics.
 
@@ -322,7 +348,7 @@ per-action reputation eligibility != per-period node compensation
 
 The receipt layer should not collapse those commitments into one hash or one trusted claim.
 
-## 14. Non-goals
+## 15. Non-goals
 
 Receipt Eligibility Mapping v0 does not define:
 
@@ -337,17 +363,17 @@ Receipt Eligibility Mapping v0 does not define:
 
 This is a ReceiptOS-side draft mapping.
 
-## 15. Open questions
+## 16. Open questions
 
 * Which exact WYRIWE / 8299 fields should be referenced by the receipt?
 * Which 8263 commitment proof fields are required for the verdict gate?
 * Which settled outcome reference should the receipt bind to?
-* Which receipt fields should a reputation-input consumer read?
+* Which additional reputation-input fields, beyond `event_id`, `commitment_proof`, and `outcome_evidence`, should be included in future multi-leaf receipt batches?
 * Which fields must remain outside ReceiptOS to avoid coupling reputation and compensation?
 * How should multi-leaf receipt batches extend the v0 one-leaf proof model?
 * Which public data sources should be considered sufficient for independent recomputation?
 
-## 16. Summary
+## 17. Summary
 
 ReceiptOS is the receipt-side eligibility seam.
 
