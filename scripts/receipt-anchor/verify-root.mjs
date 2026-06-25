@@ -19,6 +19,11 @@ function sha256Hex(text) {
   return createHash('sha256').update(text, 'utf8').digest('hex')
 }
 
+function stripTopLevelAnchor(receipt) {
+  const { anchor: _anchor, ...withoutAnchor } = receipt
+  return withoutAnchor
+}
+
 async function main() {
   const receiptPath = process.argv[2]
   const rootPath = process.argv[3]
@@ -30,7 +35,8 @@ async function main() {
 
   const receipt = JSON.parse(await readFile(receiptPath, 'utf8'))
   const expected = JSON.parse(await readFile(rootPath, 'utf8'))
-  const canonicalReceipt = canonicalize(receipt)
+  // See specs/receipt_eligibility_mapping_v0.md §10: strip top-level anchor before canonicalization.
+  const canonicalReceipt = canonicalize(stripTopLevelAnchor(receipt))
   const actualRoot = `0x${sha256Hex(canonicalReceipt)}`
   const expectedRoot = typeof expected.receiptRoot === 'string' ? expected.receiptRoot.toLowerCase() : ''
   const valid = actualRoot.toLowerCase() === expectedRoot
