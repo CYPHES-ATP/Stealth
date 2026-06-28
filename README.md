@@ -153,6 +153,21 @@ proof first, scoring second
 
 Receipt Protocol v0 proves the work path. Reputation, routing, scoring, compensation, and feedback loops are future layers that may consume verified receipts.
 
+## Ecosystem role
+
+Stealth is the execution layer in the broader receipt ecosystem.
+It focuses on agent/tool/action execution and evidence capture.
+
+Downstream:
+- Crystal Receipt / ReceiptOS turns execution evidence into portable proof objects.
+- Chronicle turns portable proof objects into durable history and continuity.
+
+In short:
+
+```text
+Stealth executes. ReceiptOS proves. Chronicle explains.
+```
+
 ## Custom Providers
 
 Stealth keeps the same provider configuration behavior as opencode. You can still connect Anthropic, OpenAI, Google, OpenRouter, local providers, and any OpenAI-compatible endpoint supported by the upstream runtime.
