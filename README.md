@@ -172,6 +172,10 @@ Stealth executes. ReceiptOS proves. Chronicle explains.
 
 Stealth keeps the same provider configuration behavior as opencode. You can still connect Anthropic, OpenAI, Google, OpenRouter, local providers, and any OpenAI-compatible endpoint supported by the upstream runtime.
 
+## Receipt Layer
+
+Core formulations: see [Canonical Principles](docs/receiptos/CANONICAL_PRINCIPLES.md).
+
 ## Attribution
 
 Stealth is based on the MIT-licensed opencode desktop GUI by Anomaly Innovations, Inc. CYPHES is maintained at [CYPHES-ATP/Stealth](https://github.com/CYPHES-ATP/Stealth).
